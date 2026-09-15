@@ -54,33 +54,34 @@ $remote = (git remote get-url origin 2>$null)
 if (-not $remote) { Say "❌ 当前目录没有配置 git remote。" 'Red'; exit 1 }
 Say "✅ 仓库：$remote"
 
-# ---------- 3. 补 workflow 权限 ----------
-$authText = (gh auth status 2>&1 | Out-String)
-if ($authText -notmatch 'workflow') {
-  Write-Host ""
-  Say "⚠️   GitHub 需要额外授权才能推送 workflow 文件。" 'Yellow'
-  Say "    接下来浏览器会打开一个页面，请点「Authorize」。" 'Yellow'
-  Write-Host ""
-  Read-Host "按回车继续（会打开浏览器）"
-  gh auth refresh -s workflow --hostname github.com
-  if ($LASTEXITCODE -ne 0) { Say "❌ 授权没有完成，请重跑本脚本。" 'Red'; exit 1 }
-  Say "✅ 权限已补上"
-} else {
-  Say "✅ 已有 workflow 权限"
-}
-
-# ---------- 4. 推送定时工作流 ----------
+# ---------- 3. 推送定时工作流（必要时才补权限） ----------
 git add .github/workflows/briefing.yml
 if (git diff --cached --quiet) {
-  Say "✅ 工作流文件已在仓库中，无需重复推送"
+  Say "✅ 定时工作流已在仓库中"
 } else {
   git commit -q -m "ci: 加入每日简报定时工作流"
-  git push
-  if ($LASTEXITCODE -ne 0) { Say "❌ 推送失败。" 'Red'; exit 1 }
-  Say "✅ 定时工作流已推送"
+  $pushOut = (git push 2>&1 | Out-String)
+  if ($LASTEXITCODE -ne 0) {
+    # GitHub 要求 OAuth App 额外拿到 workflow 权限才能推送 .github/workflows 文件
+    if ($pushOut -match 'workflow') {
+      Write-Host ""
+      Say "⚠️   推送被拒：GitHub 需要额外授权才能推送 workflow 文件。" 'Yellow'
+      Say "     接下来浏览器会打开一个页面，请点「Authorize」。" 'Yellow'
+      Write-Host ""
+      Read-Host "按回车继续（会打开浏览器）"
+      gh auth refresh -s workflow --hostname github.com
+      if ($LASTEXITCODE -ne 0) { Say "❌ 授权没有完成，请重跑本脚本。" 'Red'; exit 1 }
+      git push
+      if ($LASTEXITCODE -ne 0) { Say "❌ 推送仍然失败。" 'Red'; exit 1 }
+    } else {
+      Say "❌ 推送失败：$pushOut" 'Red'
+      exit 1
+    }
+  }
+  Say "✅ 定时工作流已推送到仓库"
 }
 
-# ---------- 5. 写入 Secrets ----------
+# ---------- 4. 写入 Secrets ----------
 Write-Host ""
 Say "正在写入 GitHub Secrets..."
 gh secret set DEEPSEEK_API_KEY --body $apiKey | Out-Null
@@ -90,7 +91,7 @@ if ($mention) { gh secret set DISCORD_MENTION --body $mention | Out-Null }
 Say "✅ Secrets 已写入："
 gh secret list
 
-# ---------- 6. 跑一次测试 ----------
+# ---------- 5. 跑一次测试 ----------
 Write-Host ""
 Say "正在触发一次早报测试（dry-run，只打印不推送）..."
 gh workflow run briefing.yml -f mode=morning -f dry_run=true
