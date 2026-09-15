@@ -54,6 +54,8 @@
     "cctvApi": "https://news.cctv.com/2019/07/gaiban/cmsdatainterface/page/news_1.jsonp",
     "xwlbRawTemplate": "https://raw.githubusercontent.com/aqen/xin-wen-lian-bo/master/news/{date}.md",
     "xwlbPageUrl": "https://tv.cctv.com/lm/xwlb/",
+    "cnFallbackRss": "https://www.chinanews.com.cn/rss/scroll-news.xml",
+    "cnFallbackSourceName": "中国新闻网",
     "maxCctv": 15,
     "maxXwlbChars": 5000,
     "maxPicks": 4

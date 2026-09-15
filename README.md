@@ -71,43 +71,57 @@ Discord 频道 Webhook（HTTPS POST）
 3. 改个名字（比如「咨询管家」），**复制 Webhook URL**
 4. 想早晚分开发到不同频道，就再建一个，分别填到两个 secret 里
 
-### 第 2 步：把代码推上 GitHub
+### 第 2 步：把 Webhook 填进 `.env`
 
-```bash
-cd D:/personal_proj/task-bot
-git init
-git add -A
-git commit -m "feat: 个人咨询管家 v2（GitHub Actions + Discord Webhook）"
-gh repo create personal-briefing-bot --private --source=. --push
+代码仓库**已经创建好并推送完成**：<https://github.com/XianruLi/personal-briefing-bot>（私有）。
+
+现在只要把第 1 步复制的 Webhook 填到项目根目录的 `.env` 里：
+
+```
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/............/....................
 ```
 
-> `.env`、`legacy/`、`_backup/` 已经在 `.gitignore` 里，不会被推上去。
+> `DEEPSEEK_API_KEY` 已经填好了，不用动。
+> `.env` 在 `.gitignore` 里，不会进仓库。
 
-### 第 3 步：配置 Secrets
+### 第 3 步：运行激活脚本
 
-仓库页面 → **Settings** → **Secrets and variables** → **Actions**：
+在项目根目录执行：
 
-**Secrets**（★ 为必填）：
+```powershell
+powershell -ExecutionPolicy Bypass -File setup\activate.ps1
+```
 
-| 名称 | 说明 |
-|---|---|
-| ★ `DEEPSEEK_API_KEY` | DeepSeek API Key |
-| ★ `DISCORD_WEBHOOK_URL` | 第 1 步复制的 Webhook |
-| `DISCORD_WEBHOOK_URL_EVENING` | 晚间复盘专用（不填就复用上面的） |
-| `DISCORD_MENTION` | 想被 @ 就填 `<@你的用户ID>` |
+或者直接**右键 `setup\activate.ps1` → 使用 PowerShell 运行**。
 
-**Variables**（选填，不填用默认值）：
+脚本会自动做完剩下所有事：
 
-| 名称 | 默认值 |
-|---|---|
-| `BRIEFING_TIMEZONE` | `Australia/Sydney` |
-| `USER_NAME` | `老李` |
-| `DEEPSEEK_MODEL` | `deepseek-v4-pro` |
+1. 校验 `.env` 填得对不对
+2. 引导你补上 GitHub 的 `workflow` 权限（会打开浏览器，点一下 Authorize 就行）
+3. 把定时工作流推送到仓库
+4. 把 API Key 和 Webhook 写进 GitHub Secrets
+5. 触发一次 **dry-run** 测试并打印日志地址
 
-### 第 4 步：手动跑一次验证
+### 第 4 步：确认后正式发一次
 
-**Actions** → 左侧「每日简报」→ **Run workflow** → mode 选 `morning` → 先勾 `dry_run` 跑一次看日志，
-确认没问题后再不勾 `dry_run` 正式跑一次，去 Discord 看有没有收到。
+```powershell
+gh workflow run briefing.yml -f mode=morning -f dry_run=false
+```
+
+去 Discord 看有没有收到。收到之后就不用再管了 —— **这台电脑开不开机都一样**。
+
+> 也可以完全不用脚本，手动在 GitHub 网页上操作：
+> **Settings → Secrets and variables → Actions** 里加 `DEEPSEEK_API_KEY` 和 `DISCORD_WEBHOOK_URL`，
+> 再把 `.github/workflows/briefing.yml` 通过网页上传即可。
+> 选填的 Secrets / Variables：
+>
+> | 名称 | 类型 | 默认值 |
+> |---|---|---|
+> | `DISCORD_WEBHOOK_URL_EVENING` | Secret | 复用 `DISCORD_WEBHOOK_URL` |
+> | `DISCORD_MENTION` | Secret | 不 @ 人 |
+> | `BRIEFING_TIMEZONE` | Variable | `Australia/Sydney` |
+> | `USER_NAME` | Variable | `老李` |
+> | `DEEPSEEK_MODEL` | Variable | `deepseek-v4-pro` |
 
 ---
 

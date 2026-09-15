@@ -155,7 +155,32 @@ export async function collectCctv(state) {
       if (items.length >= cfg.maxCctv) break;
     }
   } catch (err) {
-    errors.push(err.message);
+    errors.push('央视新闻: ' + err.message);
+  }
+
+  // 央视接口从境外网络偶尔不通，抓到的太少就用中国新闻网兜底
+  if (items.length < 3 && cfg.cnFallbackRss) {
+    try {
+      const xml = await fetchText(cfg.cnFallbackRss, { timeoutMs: 25000, label: '中国新闻网' });
+      for (const entry of parseFeed(xml)) {
+        if (!entry.title || !entry.link) continue;
+        const id = hashId('cnnews:' + entry.link);
+        if (seen.has(id)) continue;
+        items.push({
+          kind: 'cnnews',
+          id,
+          source: cfg.cnFallbackSourceName || '中国新闻网',
+          title: entry.title,
+          summary: truncate(entry.description, 300),
+          time: entry.pubDate || '',
+          url: entry.link,
+        });
+        if (items.length >= cfg.maxCctv) break;
+      }
+      if (items.length) console.log('[collect] 央视接口不可用，已用中国新闻网兜底 ' + items.length + ' 条');
+    } catch (err) {
+      errors.push('中国新闻网: ' + err.message);
+    }
   }
 
   return { items, errors };
