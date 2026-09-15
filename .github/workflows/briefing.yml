@@ -57,12 +57,14 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "mode=${{ github.event.inputs.mode }}" >> "$GITHUB_OUTPUT"
+            # 手动点「Run workflow」说明你就是想现在看结果，所以忽略时间窗口
+            flags="--force"
             if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-              echo "flags=--dry-run" >> "$GITHUB_OUTPUT"
-            else
-              echo "flags=" >> "$GITHUB_OUTPUT"
+              flags="$flags --dry-run"
             fi
+            echo "flags=$flags" >> "$GITHUB_OUTPUT"
           else
+            # 定时触发：mode=auto，由脚本按本地时间判断该发早报还是复盘
             echo "mode=auto" >> "$GITHUB_OUTPUT"
             echo "flags=" >> "$GITHUB_OUTPUT"
           fi
