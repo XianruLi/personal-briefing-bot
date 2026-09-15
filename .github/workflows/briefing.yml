@@ -20,6 +20,10 @@ on:
         type: choice
         options: [auto, morning, evening]
         default: auto
+      force:
+        description: 忽略时间窗口和「今天已发过」判断，立刻跑（调试用）
+        type: boolean
+        default: false
       dry_run:
         description: 只预览不推送（结果打印在日志里）
         type: boolean
@@ -55,21 +59,19 @@ jobs:
       - name: 决定运行参数
         id: run
         run: |
+          # 注意：用 REST API 触发时，GitHub 会把下面这些 input 填成「默认值」，
+          # 所以绝不能靠「mode 有没有值」去判断是不是人工点击 —— 那会导致自动触发被当成人工触发。
+          # 一切以显式开关为准。
           MODE="${{ github.event.inputs.mode }}"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "$MODE" ]; then
-            # 有人在网页/App 上手动点了 Run workflow 并选了模式 —— 忽略时间窗口，立即跑
-            flags="--force"
-            if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-              flags="$flags --dry-run"
-            fi
-            echo "mode=$MODE" >> "$GITHUB_OUTPUT"
-            echo "flags=$flags" >> "$GITHUB_OUTPUT"
-          else
-            # 定时触发，或外部定时器用 API 触发（不带 mode）——
-            # 都交给脚本按本地时间自动判断该发早报还是复盘，并且遵守「今天已发过」的去重
-            echo "mode=auto" >> "$GITHUB_OUTPUT"
-            echo "flags=" >> "$GITHUB_OUTPUT"
-          fi
+          if [ -z "$MODE" ]; then MODE=auto; fi
+
+          flags=""
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then flags="$flags --force"; fi
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then flags="$flags --dry-run"; fi
+
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "flags=$flags" >> "$GITHUB_OUTPUT"
+          echo "本次参数：mode=$MODE flags=${flags:-（无）}"
 
       - name: 生成并推送简报
         env:
