@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastMorningDate": "2026-09-16",
+  "lastMorningDate": null,
   "lastEveningDate": null,
   "seenPaperIds": [
     "2609.13243",
@@ -17,9 +17,6 @@
     "1btb7m9"
   ],
   "completedAt": {},
-  "morningSnapshot": {
-    "date": "2026-09-16",
-    "openCount": 8
-  },
+  "morningSnapshot": null,
   "updatedAt": "2026-09-15T15:28:58.784Z"
 }
