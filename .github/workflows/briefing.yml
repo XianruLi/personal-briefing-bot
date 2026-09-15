@@ -55,16 +55,18 @@ jobs:
       - name: 决定运行参数
         id: run
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "mode=${{ github.event.inputs.mode }}" >> "$GITHUB_OUTPUT"
-            # 手动点「Run workflow」说明你就是想现在看结果，所以忽略时间窗口
+          MODE="${{ github.event.inputs.mode }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "$MODE" ]; then
+            # 有人在网页/App 上手动点了 Run workflow 并选了模式 —— 忽略时间窗口，立即跑
             flags="--force"
             if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
               flags="$flags --dry-run"
             fi
+            echo "mode=$MODE" >> "$GITHUB_OUTPUT"
             echo "flags=$flags" >> "$GITHUB_OUTPUT"
           else
-            # 定时触发：mode=auto，由脚本按本地时间判断该发早报还是复盘
+            # 定时触发，或外部定时器用 API 触发（不带 mode）——
+            # 都交给脚本按本地时间自动判断该发早报还是复盘，并且遵守「今天已发过」的去重
             echo "mode=auto" >> "$GITHUB_OUTPUT"
             echo "flags=" >> "$GITHUB_OUTPUT"
           fi

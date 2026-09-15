@@ -27,6 +27,7 @@ function parseArgs(argv) {
     else if (a === '--no-ai') args.noAi = true;
     else if (a === '--force') args.force = true;
   }
+  if (!args.mode) args.mode = 'auto'; // 外部定时器用 API 触发时不会带 mode
   if (!['auto', 'morning', 'evening'].includes(args.mode)) throw new Error('未知的 --mode: ' + args.mode);
   return args;
 }
