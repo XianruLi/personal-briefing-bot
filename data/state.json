@@ -1,10 +1,25 @@
 {
   "version": 1,
-  "lastMorningDate": null,
+  "lastMorningDate": "2026-09-16",
   "lastEveningDate": null,
-  "seenPaperIds": [],
-  "seenNewsIds": [],
+  "seenPaperIds": [
+    "2609.13243",
+    "2609.13270",
+    "2609.13335"
+  ],
+  "seenNewsIds": [
+    "nngr64",
+    "1jgc7g6",
+    "17jjfd8",
+    "1dcxo0v",
+    "bpulai",
+    "709s4s",
+    "1btb7m9"
+  ],
   "completedAt": {},
-  "morningSnapshot": null,
-  "updatedAt": null
+  "morningSnapshot": {
+    "date": "2026-09-16",
+    "openCount": 8
+  },
+  "updatedAt": "2026-09-15T15:28:58.784Z"
 }
