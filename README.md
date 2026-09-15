@@ -37,7 +37,9 @@ Discord 频道 Webhook（HTTPS POST）
 
 ## 一、任务怎么维护
 
-任务全部放在 **`tasks/tasks.md`** 一个文件里，用 Markdown 复选框：
+任务全部放在 **`tasks/tasks.md`** 一个文件里，用 Markdown 复选框。三种改法，按场景挑一个。
+
+### 写法规则
 
 ```markdown
 ## 进行中
@@ -50,15 +52,73 @@ Discord 频道 Webhook（HTTPS POST）
 | 写法 | 含义 |
 |---|---|
 | `- [ ]` | 未完成 |
-| `- [x]` | 已完成 |
+| `- [x]` 或 `- [X]` | 已完成，大小写都认 |
 | `@2026-09-25` | 截止日期（会算逾期 / 今天到期 / 还剩几天） |
-| `!高` `!中` `!低` | 优先级（也可以写 `!high` 之类） |
+| `!高` `!中` `!低` | 优先级（也可以写 `!high` `!medium` `!low`） |
 | `#标签` | 标签，方便自己归类 |
+| `* [ ] xxx` | 用星号当列表符号也行 |
 
-**手机上怎么用：** 装一个 GitHub App，打开 `tasks/tasks.md` → 编辑 → 加一行 → 提交。
-勾掉任务就把 `[ ]` 改成 `[x]`，同样保存提交。
+三个容易踩的坑：
 
-完成超过 14 天的任务会被**自动归档**到 `tasks/done.md`，`tasks.md` 不会越来越长。
+1. 方括号里**必须有空格**：`- [ ] 任务` ✅ ／ `- [ ]任务` ❌ 识别不到
+2. 标签**前面要有空格**：`做作业 #FYP` ✅ ／ `做作业#FYP` ❌ 不算标签
+3. `@` `!` `#` 标记会从标题里去掉，这是正常的 —— AI 看到的是干净标题 + 单独的结构化字段
+
+---
+
+### 桌面端（主力方式）
+
+#### 方式 A：一键脚本（推荐）
+
+右键 `setup\edit-tasks.ps1` → **使用 PowerShell 运行**。脚本会自动：
+
+1. `git pull --rebase` 同步云端 —— **这一步很关键**，见下方说明
+2. 用编辑器（优先 VS Code，否则记事本）打开 `tasks/tasks.md`
+3. 你改完保存，回终端按回车
+4. 显示改动 diff，确认后自动 `commit` + `push`
+
+#### 方式 B：手动 git
+
+```powershell
+cd D:\personal_proj\task-bot
+
+git pull --rebase          # ← 一定要先拉，否则推送会被拒
+
+# 用编辑器改 tasks/tasks.md
+
+git add tasks/tasks.md
+git commit -m "task: 加了几个任务"
+git push
+```
+
+> ⚠️ **忘记 `git pull --rebase` 是这里唯一的坑。**
+> GitHub Actions 每天会往仓库提交 `data/state.json`（去重表 + 任务归档），
+> 本地落后时 `git push` 会报 `rejected`。真遇到了，`git pull --rebase` 再 push 一次就好。
+
+---
+
+### 手机端
+
+#### 方式 A：快捷任务按钮（推荐，最快）
+
+仓库 → **Actions** → 左侧 **📌 快捷任务** → **Run workflow** → 填表单 → 绿色按钮。
+
+| 场景 | 怎么填 |
+|---|---|
+| **加任务** | action 选「添加任务」，`task` 填内容；截止日期、优先级、标签可选填 |
+| **完成任务** | action 选「完成任务」，`task` 那栏**只填关键词**——模糊匹配，比如填「导师」 |
+
+完成任务时如果匹配到多条，它会**列出来让你写得更具体**，不会乱勾。
+不管哪种，跑完页面会直接显示结果摘要，仓库也会自动多一个提交。
+
+#### 方式 B：GitHub App 直接改文件
+
+GitHub App → 打开仓库 → `tasks/tasks.md` → 铅笔图标 ✏️ → 改 → **Commit changes**。
+大约 7~8 次点击，适合坐下来慢慢整理，不适合随手记。
+
+---
+
+完成超过 14 天的任务会被**自动归档**到 `tasks/done.md`，`tasks.md` 不会越用越长。
 
 ---
 
@@ -69,7 +129,15 @@ Discord 频道 Webhook（HTTPS POST）
 1. 打开 Discord，进你想收简报的频道
 2. 频道名右边齿轮 → **整合 (Integrations)** → **Webhook** → **新建 Webhook**
 3. 改个名字（比如「咨询管家」），**复制 Webhook URL**
-4. 想早晚分开发到不同频道，就再建一个，分别填到两个 secret 里
+4. 建**两个** Webhook，分别指向两个频道（当前配置）：
+
+   | 频道 | 配置到哪个变量 |
+   |---|---|
+   | `#每日早报` | `DISCORD_WEBHOOK_URL` |
+   | `#每日复盘` | `DISCORD_WEBHOOK_URL_EVENING` |
+
+   > 只建一个也能用：`DISCORD_WEBHOOK_URL_EVENING` 留空时，晚间复盘会自动复用早报那个频道。
+   > 拆成两个频道的好处是**手机端可以单独静音其中一个**。
 
 ### 第 2 步：把 Webhook 填进 `.env`
 
@@ -194,8 +262,17 @@ src/
 ├── prompts.mjs      早报 / 复盘提示词
 ├── render.mjs       结构化结果 → Discord embed
 ├── push.mjs         Webhook 推送（自动分片、限流重试）
+├── task-action.mjs  快捷任务按钮的后端（加任务 / 按关键词完成任务）
 ├── notify-failure.mjs 失败告警
 └── util.mjs         抓取、时区、文本工具
+
+.github/workflows/
+├── briefing.yml     定时工作流（早 7:00 / 晚 21:30）
+└── add-task.yml     「📌 快捷任务」按钮
+
+setup/
+├── activate.ps1     一次性激活（推工作流 + 写 Secrets）
+└── edit-tasks.ps1   桌面端改任务的一键脚本
 ```
 
 数据源（都在 `src/collect.mjs`，配置在 `config/sources.json`）：

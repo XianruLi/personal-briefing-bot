@@ -1,0 +1,82 @@
+name: 📌 快捷任务
+
+# 在 GitHub 网页或手机 App 上：
+#   仓库 → Actions → 左侧「📌 快捷任务」→ Run workflow → 填表单 → 绿色按钮
+# 加完/完成后会自动提交到仓库，云端下次推送就读到了。
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 要做什么
+        type: choice
+        options: [添加任务, 完成任务]
+        default: 添加任务
+      task:
+        description: 任务内容（完成模式下填关键词即可，支持模糊匹配）
+        type: string
+        required: true
+      due:
+        description: 截止日期，格式 2026-09-25（仅添加时用，可留空）
+        type: string
+        default: ''
+      priority:
+        description: 优先级（仅添加时用）
+        type: choice
+        options: [不设置, 高, 中, 低]
+        default: 不设置
+      tags:
+        description: 标签，空格分隔，不用写 #（仅添加时用，可留空）
+        type: string
+        default: ''
+      section:
+        description: 加到哪个分组（仅添加时用）
+        type: choice
+        options: [进行中, 待办]
+        default: 进行中
+
+permissions:
+  contents: write
+
+concurrency:
+  group: quick-task
+  cancel-in-progress: false
+
+jobs:
+  task:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 拉取仓库
+        uses: actions/checkout@v6
+
+      - name: 准备 Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: 修改任务清单
+        env:
+          INPUT_ACTION: ${{ github.event.inputs.action }}
+          INPUT_TASK: ${{ github.event.inputs.task }}
+          INPUT_DUE: ${{ github.event.inputs.due }}
+          INPUT_PRIORITY: ${{ github.event.inputs.priority }}
+          INPUT_TAGS: ${{ github.event.inputs.tags }}
+          INPUT_SECTION: ${{ github.event.inputs.section }}
+        run: node src/task-action.mjs
+
+      - name: 提交回仓库
+        env:
+          COMMIT_MSG: "${{ github.event.inputs.action }}：${{ github.event.inputs.task }}"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tasks
+          if git diff --staged --quiet; then
+            echo "任务清单没有变化，跳过提交"
+            exit 0
+          fi
+          git commit -m "$COMMIT_MSG"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || true
+          git push
