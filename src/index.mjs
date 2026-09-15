@@ -9,7 +9,7 @@
  * --no-ai   跳过 AI，用原始抓取内容拼简报（离线自测 / AI 挂了的兜底）
  * --force   忽略时间窗口与「今天已发过」的判断
  */
-import { config, validateConfig } from './config.mjs';
+import { config, validateConfig, enabledChannels } from './config.mjs';
 import { loadState, saveState } from './state.mjs';
 import { parseTasks, groupTasks, tasksToPromptText, trackCompletions, archiveOldCompleted } from './tasks.mjs';
 import { collectAll } from './collect.mjs';
@@ -17,6 +17,8 @@ import { buildMorningPrompt, buildEveningPrompt } from './prompts.mjs';
 import { chatJson } from './ai.mjs';
 import { renderMorning, renderEvening } from './render.mjs';
 import { pushDiscord } from './push.mjs';
+import { pushFeishu } from './push-feishu.mjs';
+import { pushWeCom } from './push-wecom.mjs';
 import { zoneParts, dateInZone } from './util.mjs';
 
 function parseArgs(argv) {
@@ -196,9 +198,44 @@ async function main() {
     return;
   }
 
-  const webhookUrl = args.mode === 'evening' && config.webhookUrlEvening ? config.webhookUrlEvening : config.webhookUrl;
-  const sent = await pushDiscord({ header: rendered.header, sections: rendered.sections, webhookUrl });
-  console.log('[push] 已推送 ' + sent + ' 条消息到 Discord');
+  // ---- 推送：可以同时推多个渠道，单个渠道失败不影响其他渠道 ----
+  const isEvening = args.mode === 'evening';
+  const cardTitle = (isEvening ? '🌙 晚间复盘' : '🌅 每日早报') + ' · ' + zone.label;
+  const payload = { title: cardTitle, header: rendered.header, sections: rendered.sections };
+
+  const jobs = [];
+  const discordUrl = isEvening && config.webhookUrlEvening ? config.webhookUrlEvening : config.webhookUrl;
+  if (discordUrl) {
+    jobs.push(['Discord', () => pushDiscord({ ...payload, webhookUrl: discordUrl })]);
+  }
+  const feishuUrl = isEvening && config.feishuWebhookEvening ? config.feishuWebhookEvening : config.feishuWebhook;
+  if (feishuUrl) {
+    jobs.push(['飞书', () => pushFeishu({
+      ...payload,
+      webhookUrl: feishuUrl,
+      secret: config.feishuSecret,
+      color: isEvening ? 'indigo' : 'blue',
+    })]);
+  }
+  if (config.wecomWebhook) {
+    jobs.push(['企业微信', () => pushWeCom({ ...payload, webhookUrl: config.wecomWebhook })]);
+  }
+
+  const failures = [];
+  for (const [name, send] of jobs) {
+    try {
+      const n = await send();
+      console.log('[push] ' + name + ' 已送达（' + n + ' 条）');
+    } catch (err) {
+      console.error('[push] ' + name + ' 推送失败: ' + err.message);
+      failures.push(name + ': ' + err.message);
+    }
+  }
+
+  // 全部渠道都失败时不要记录「今天已发」，这样定时器下次还能重试
+  if (jobs.length && failures.length === jobs.length) {
+    throw new Error('所有推送渠道都失败了 —— ' + failures.join(' | '));
+  }
 
   // ---- 状态落盘 ----
   if (args.mode === 'morning') {

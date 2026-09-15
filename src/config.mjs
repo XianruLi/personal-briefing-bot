@@ -59,6 +59,12 @@ export const config = {
   webhookUrlEvening: (process.env.DISCORD_WEBHOOK_URL_EVENING || '').trim(),
   mention: (process.env.DISCORD_MENTION || '').trim(),
 
+  // 飞书 / 企业微信（回大陆后可切换或同时使用）
+  feishuWebhook: (process.env.FEISHU_WEBHOOK_URL || '').trim(),
+  feishuSecret: (process.env.FEISHU_SECRET || '').trim(),
+  feishuWebhookEvening: (process.env.FEISHU_WEBHOOK_URL_EVENING || '').trim(),
+  wecomWebhook: (process.env.WECOM_WEBHOOK_URL || '').trim(),
+
   timeZone: (process.env.BRIEFING_TIMEZONE || 'Australia/Melbourne').trim(),
   userName: (process.env.USER_NAME || '老李').trim(),
 
@@ -78,8 +84,19 @@ export const config = {
 export function validateConfig({ needAi, needWebhook }) {
   const problems = [];
   if (needAi && !config.deepseekApiKey) problems.push('DEEPSEEK_API_KEY 未配置');
-  if (needWebhook && !config.webhookUrl) problems.push('DISCORD_WEBHOOK_URL 未配置');
+  if (needWebhook && !config.webhookUrl && !config.feishuWebhook && !config.wecomWebhook) {
+    problems.push('一个推送渠道都没配（DISCORD_WEBHOOK_URL / FEISHU_WEBHOOK_URL / WECOM_WEBHOOK_URL 至少填一个）');
+  }
   if (problems.length) {
     throw new Error('配置缺失：' + problems.join('；') + '。本地请检查 .env，云端请检查 GitHub Secrets。');
   }
+}
+
+/** 当前启用了哪些推送渠道。 */
+export function enabledChannels(mode) {
+  const list = [];
+  if (config.webhookUrl || config.webhookUrlEvening) list.push('discord');
+  if (config.feishuWebhook || config.feishuWebhookEvening) list.push('feishu');
+  if (config.wecomWebhook) list.push('wecom');
+  return list;
 }

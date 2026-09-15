@@ -79,6 +79,10 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_WEBHOOK_URL_EVENING: ${{ secrets.DISCORD_WEBHOOK_URL_EVENING }}
           DISCORD_MENTION: ${{ secrets.DISCORD_MENTION }}
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          FEISHU_SECRET: ${{ secrets.FEISHU_SECRET }}
+          FEISHU_WEBHOOK_URL_EVENING: ${{ secrets.FEISHU_WEBHOOK_URL_EVENING }}
+          WECOM_WEBHOOK_URL: ${{ secrets.WECOM_WEBHOOK_URL }}
           BRIEFING_TIMEZONE: ${{ vars.BRIEFING_TIMEZONE || 'Australia/Melbourne' }}
           USER_NAME: ${{ vars.USER_NAME || '老李' }}
           DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL || 'deepseek-v4-pro' }}

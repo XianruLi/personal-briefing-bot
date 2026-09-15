@@ -189,6 +189,10 @@ gh workflow run briefing.yml -f mode=morning -f dry_run=false
 > |---|---|---|
 > | `DISCORD_WEBHOOK_URL_EVENING` | Secret | 复用 `DISCORD_WEBHOOK_URL` |
 > | `DISCORD_MENTION` | Secret | 不 @ 人 |
+> | `FEISHU_WEBHOOK_URL` | Secret | 不启用飞书 |
+> | `FEISHU_SECRET` | Secret | 飞书机器人未开签名校验 |
+> | `FEISHU_WEBHOOK_URL_EVENING` | Secret | 复用 `FEISHU_WEBHOOK_URL` |
+> | `WECOM_WEBHOOK_URL` | Secret | 不启用企业微信 |
 > | `BRIEFING_TIMEZONE` | Variable | `Australia/Melbourne` |
 > | `USER_NAME` | Variable | `老李` |
 > | `DEEPSEEK_MODEL` | Variable | `deepseek-v4-pro` |
@@ -210,6 +214,45 @@ GitHub Actions 的 cron **只认 UTC**，而墨尔本有夏令时（AEST UTC+10 
 
 想换推送时间：改 `.github/workflows/briefing.yml` 里的 cron，以及
 `src/index.mjs` 里的 `MORNING_HOUR` / `EVENING_HOUR`（在 `src/config.mjs`）。
+
+### ⚠️ 已知问题：GitHub 自带定时器在新私有仓库上不触发
+
+**实测结论（2026-09-15）**：本仓库从创建到现在的 7 小时内，约 13 个应触发的 cron 时刻
+**一次都没触发**，包括一个每 5 分钟的探针。而手动触发（`workflow_dispatch`）完全正常。
+工作流文件、Actions 权限、仓库状态逐项核对均正常。
+
+这匹配一个**已知的 GitHub bug：全新的私有仓库上 `schedule` 触发器不工作**
+（社区讨论 [#201436](https://github.com/orgs/community/discussions/201436)，症状完全一致）。
+强制重新注册 schedule、disable/enable 工作流都试过，无效。
+
+**绕开办法：用外部定时器调用 GitHub API 来触发。** 业务代码一行都不用改，换的只是「闹钟」。
+
+方案见 `setup/cloudflare-worker.js`（Cloudflare Workers 定时触发，推荐）：
+
+1. 注册 [Cloudflare](https://dash.cloudflare.com) → Workers & Pages → Create → Workers → Deploy
+2. Edit code，把 `setup/cloudflare-worker.js` 整个粘进去 → Deploy
+3. Settings → Variables and Secrets 加三个变量：
+
+   | 变量名 | 类型 | 值 |
+   |---|---|---|
+   | `GH_TOKEN` | Secret | 你的 GitHub 细粒度令牌 |
+   | `GH_REPO` | Text | `XianruLi/personal-briefing-bot` |
+   | `GH_WORKFLOW` | Text | `briefing.yml` |
+
+4. Settings → Triggers → Cron Triggers 加 4 条（Cloudflare 用 UTC）：
+   `0 20 * * *`、`0 21 * * *`、`30 10 * * *`、`30 11 * * *`
+5. 浏览器访问一次 Worker 地址，返回 `"dispatched": true` 即成功
+
+**GitHub 令牌怎么建（权限最小化）：**
+头像 → Settings → Developer settings → Personal access tokens → Fine-grained tokens →
+Generate new token：
+- Repository access 选 **Only select repositories**，只勾 `personal-briefing-bot`
+- Permissions → Repository permissions → **Actions: Read and write**
+- 有效期最长 1 年，到期换新令牌并更新 Worker 变量即可
+
+> **不会重复推送**：Worker 触发时不带任何参数，工作流会按墨尔本本地时间自动判断该发早报
+> 还是复盘，并遵守「今天已发过」的去重。所以 GitHub 自带定时器哪天修好了，
+> 两套一起跑也不会重复 —— 可以放心留着当备份。
 
 ---
 
