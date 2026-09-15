@@ -15,3 +15,4 @@ jobs:
         run: |
           echo "触发方式: ${{ github.event_name }}"
           echo "UTC: $(date -u '+%Y-%m-%d %H:%M:%S')"
+# re-register probe 2026-09-16T07:25:08.2667407+10:00
