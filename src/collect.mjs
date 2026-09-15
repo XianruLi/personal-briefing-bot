@@ -5,6 +5,7 @@
 import { config } from './config.mjs';
 import { parseFeed } from './feed.mjs';
 import { fetchText, truncate, uniqueBy, dateInZone } from './util.mjs';
+import { collectWeather } from './sources/weather.mjs';
 
 /** 简单哈希，用于给新闻生成稳定 ID。 */
 function hashId(text) {
@@ -219,17 +220,21 @@ export async function collectXwlb(timeZone) {
 export async function collectAll({ state, mode, timeZone }) {
   const errors = [];
   const needNews = mode === 'morning';
+  const needPapers = mode === 'morning';
 
-  const [arxiv, techNews, cctv] = await Promise.all([
-    collectArxiv(state).catch((err) => ({ items: [], errors: [err.message] })),
+  const emptyWeather = { location: '', timezone: '', current: null, days: [], errors: [] };
+
+  const [arxiv, techNews, cctv, weather] = await Promise.all([
+    needPapers ? collectArxiv(state).catch((err) => ({ items: [], errors: [err.message] })) : { items: [], errors: [] },
     needNews ? collectTechNews(state).catch((err) => ({ items: [], errors: [err.message] })) : { items: [], errors: [] },
     needNews ? collectCctv(state).catch((err) => ({ items: [], errors: [err.message] })) : { items: [], errors: [] },
+    collectWeather().catch((err) => ({ ...emptyWeather, errors: ['天气：' + err.message] })),
   ]);
 
   let xwlb = { text: '', url: '', date: null, errors: [] };
   if (needNews) xwlb = await collectXwlb(timeZone);
 
-  errors.push(...arxiv.errors, ...techNews.errors, ...cctv.errors, ...xwlb.errors);
+  errors.push(...arxiv.errors, ...techNews.errors, ...cctv.errors, ...xwlb.errors, ...weather.errors);
 
   return {
     papers: arxiv.items,
@@ -238,6 +243,7 @@ export async function collectAll({ state, mode, timeZone }) {
     xwlb: xwlb.text,
     xwlbUrl: xwlb.url,
     xwlbDate: xwlb.date,
+    weather,
     errors,
   };
 }

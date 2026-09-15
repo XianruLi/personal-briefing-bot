@@ -3,6 +3,7 @@
  * 候选条目由我们自己抓取并编号，AI 只能引用这些 id。
  */
 import { config } from './config.mjs';
+import { weatherToPromptText } from './sources/weather.mjs';
 
 const STYLE_RULES = [
   '你要为一个中文用户写每日简报，他是在读本科生，专业是机器人工程 / 机电自动化。',
@@ -73,10 +74,17 @@ export function buildMorningPrompt({ data, grouped, todayIso, zone }) {
     '===== 五、昨晚《新闻联播》文字稿节选 =====',
     data.xwlb || '（今天没抓到新闻联播文字稿）',
     '',
+    '===== 六、今天的天气（' + (data.weather && data.weather.location ? data.weather.location : '所在地') + ' ' + (data.weather && data.weather.postcode ? data.weather.postcode : '') + '）=====',
+    weatherToPromptText(data.weather, todayIso),
+    '',
     '===== 输出要求 =====',
     '只输出一个 JSON 对象（不要 markdown 代码块，不要多余解释），字段如下：',
     '{',
-    '  "greeting": "开场白，一句，可以带今天星期几和天气式的心情，不要肉麻",',
+    '  "greeting": "开场白，一句。可以顺带点一下天气给人的感觉，但别和 weather.summary 重复，不要肉麻",',
+    '  "weather": {',
+    '    "summary": "一句话说清今天什么天气、多少度、要不要带伞或防晒，20-40 字",',
+    '    "advice": "一句穿衣 / 出行建议，要具体（比如「体感只有 5°C，别只穿卫衣」「下午 3 点后转雨，出门带伞」）"',
+    '  },',
     '  "taskComment": "针对今天任务的 1-2 句点评或建议，要具体（比如提醒先做逾期的、指出某项可以拆小）",',
     '  "taskFocus": ["今天最该先做的 1-3 件事，必须原样抄任务标题"],',
     '  "papers": [',
@@ -93,7 +101,8 @@ export function buildMorningPrompt({ data, grouped, todayIso, zone }) {
     '  "tip": "今天给他的一句提醒或鼓励，20-40 字，不要心灵鸡汤腔"',
     '}',
     '',
-    '如果某一类没有合适内容，就返回空数组；xwlb 没有文字稿时返回 null。',
+    '如果某一类没有合适内容，就返回空数组；xwlb 没有文字稿时返回 null；weather 数据缺失时返回 null。',
+    '写 weather 时必须基于上面给出的真实数字，不要凭季节猜。',
   ].join('\n');
 
   return { system, user };
@@ -102,7 +111,7 @@ export function buildMorningPrompt({ data, grouped, todayIso, zone }) {
 // ============================================================
 //  晚间复盘
 // ============================================================
-export function buildEveningPrompt({ grouped, todayIso, zone, newlyDone, morningOpenCount }) {
+export function buildEveningPrompt({ grouped, todayIso, zone, newlyDone, morningOpenCount, weather }) {
   const system = [
     '你是用户的「个人咨询管家」，负责晚上 21:30 做当天复盘。',
     STYLE_RULES,
@@ -126,6 +135,9 @@ export function buildEveningPrompt({ grouped, todayIso, zone, newlyDone, morning
     '===== 仍未完成 =====',
     openList,
     '',
+    '===== 明天的天气（' + (weather && weather.location ? weather.location : '所在地') + '）=====',
+    weatherToPromptText(weather, todayIso),
+    '',
     '===== 背景数据 =====',
     '今天早上推送时未完成任务数：' + (morningOpenCount == null ? '（无记录）' : morningOpenCount),
     '现在未完成任务数：' + grouped.openCount,
@@ -138,7 +150,7 @@ export function buildEveningPrompt({ grouped, todayIso, zone, newlyDone, morning
     '  "progress": "1-2 句总结今天的完成情况，给出具体数字对比",',
     '  "doneList": ["今天完成的任务标题，原样抄"],',
     '  "remaining": ["还没完成、且明天值得先做的任务标题，最多 5 条，按优先级"],',
-    '  "tomorrow": ["明天建议做的 1-3 件事，要具体可执行"],',
+    '  "tomorrow": ["明天建议做的 1-3 件事，要具体可执行；如果明天下雨或很冷，把天气因素考虑进去"],',
     '  "comment": "一句针对他的提醒，比如某项拖太久了、某项该拆小",',
     '  "tip": "睡前一句，20-40 字，不要鸡汤"',
     '}',

@@ -25,6 +25,55 @@ const clip = (s, n) => {
 };
 
 /**
+ * 天气区块。数字永远来自抓取结果，AI 只补一句摘要和建议 —— 所以即使 AI 挂了也有天气看。
+ */
+function weatherSection(weather, todayIso, aiWeather, { tomorrowOnly = false } = {}) {
+  if (!weather || (!weather.days || !weather.days.length) && !weather.current) return null;
+
+  const days = weather.days || [];
+  if (tomorrowOnly) {
+    const tomorrow = days.find((d) => d.date !== todayIso) || days[0];
+    if (!tomorrow) return null;
+    const body = ['**' + tomorrow.weekday + ' ' + tomorrow.min + '~' + tomorrow.max + '°C** · ' + tomorrow.text + ' ' + tomorrow.emoji +
+      ' · 降水概率 ' + (tomorrow.rainChance == null ? '?' : tomorrow.rainChance + '%')];
+    if (tomorrow.uvMax != null && tomorrow.uvMax >= 6) body.push('UV 指数 ' + tomorrow.uvMax + '，中午注意防晒');
+    if (aiWeather && aiWeather.advice) body.push('', '👕 ' + clip(aiWeather.advice, 300));
+    return { title: '🌤 明天天气 · ' + (weather.location || ''), body: body.join('\n'), color: 0x3498db };
+  }
+
+  const today = days.find((d) => d.date === todayIso) || days[0];
+  if (!today) return null;
+
+  const lines = [];
+  lines.push('**' + today.min + '~' + today.max + '°C** · ' + today.text + ' ' + today.emoji +
+    (today.rainChance == null ? '' : ' · 降水概率 ' + today.rainChance + '%'));
+
+  const facts = [];
+  if (weather.current) {
+    facts.push('实况 ' + weather.current.temp + '°C');
+    if (weather.current.feelsLike != null && Math.abs(weather.current.feelsLike - weather.current.temp) >= 2) {
+      facts.push('体感 ' + weather.current.feelsLike + '°C');
+    }
+    if (weather.current.humidity != null) facts.push('湿度 ' + weather.current.humidity + '%');
+    if (weather.current.wind != null) facts.push('风 ' + weather.current.wind + ' km/h');
+  } else if (today.windMax != null) {
+    facts.push('最大风 ' + today.windMax + ' km/h');
+  }
+  if (today.uvMax != null) facts.push('UV ' + today.uvMax);
+  if (facts.length) lines.push(facts.join(' · '));
+
+  if (today.sunrise || today.sunset) {
+    lines.push('日出 ' + today.sunrise + ' · 日落 ' + today.sunset);
+  }
+
+  if (aiWeather && aiWeather.summary) lines.push('', '💬 ' + clip(aiWeather.summary, 300));
+  if (aiWeather && aiWeather.advice) lines.push('👕 ' + clip(aiWeather.advice, 300));
+
+  const title = '🌤 今日天气 · ' + (weather.location || '') + (weather.postcode ? ' ' + weather.postcode : '');
+  return { title, body: lines.join('\n'), color: 0x3498db };
+}
+
+/**
  * 早报：返回 [{ title, body, color }]
  */
 export function renderMorning({ ai, data, grouped, zone, todayIso }) {
@@ -32,6 +81,9 @@ export function renderMorning({ ai, data, grouped, zone, todayIso }) {
   const techMap = byId(data.techNews);
   const cnMap = byId(data.cnNews);
   const sections = [];
+
+  const wx = weatherSection(data.weather, todayIso, ai.weather);
+  if (wx) sections.push(wx);
 
   // ---- 任务 ----
   const focus = Array.isArray(ai.taskFocus) ? ai.taskFocus.filter(Boolean) : [];
@@ -138,8 +190,11 @@ export function renderMorning({ ai, data, grouped, zone, todayIso }) {
 /**
  * 晚间复盘：返回 [{ title, body, color }]
  */
-export function renderEvening({ ai, grouped, zone, newlyDone, morningOpenCount }) {
+export function renderEvening({ ai, grouped, zone, newlyDone, morningOpenCount, weather, todayIso }) {
   const sections = [];
+
+  const wx = weatherSection(weather, todayIso, ai.weather, { tomorrowOnly: true });
+  if (wx) sections.push(wx);
 
   const stat = [];
   stat.push('未完成：**' + grouped.openCount + '** 项' + (morningOpenCount == null ? '' : '（早上是 ' + morningOpenCount + ' 项）'));

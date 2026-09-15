@@ -59,5 +59,14 @@
     "maxCctv": 15,
     "maxXwlbChars": 5000,
     "maxPicks": 4
+  },
+  "weather": {
+    "enabled": true,
+    "name": "墨尔本 Oakleigh East",
+    "postcode": "3166",
+    "latitude": -37.9,
+    "longitude": 145.1167,
+    "timezone": "Australia/Melbourne",
+    "forecastDays": 2
   }
 }

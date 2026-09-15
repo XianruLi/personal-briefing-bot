@@ -4,8 +4,8 @@ name: 每日简报
 # 所以「两个候选 UTC 时刻」都排上，真正发不发由脚本按 BRIEFING_TIMEZONE
 # 判断本地小时决定 —— 夏令时切换后自动对上，不用手动改。
 #
-#   早报 07:00 Sydney = 20:00 UTC（夏令时 AEDT）/ 21:00 UTC（冬令时 AEST）
-#   复盘 21:30 Sydney = 10:30 UTC（夏令时 AEDT）/ 11:30 UTC（冬令时 AEST）
+#   早报 07:00 Melbourne = 20:00 UTC（夏令时 AEDT）/ 21:00 UTC（冬令时 AEST）
+#   复盘 21:30 Melbourne = 10:30 UTC（夏令时 AEDT）/ 11:30 UTC（冬令时 AEST）
 
 on:
   schedule:
@@ -49,7 +49,7 @@ jobs:
       - name: 打印当前时间（排查定时漂移用）
         run: |
           echo "UTC    : $(date -u '+%Y-%m-%d %H:%M:%S')"
-          echo "Sydney : $(TZ=Australia/Sydney date '+%Y-%m-%d %H:%M:%S %a')"
+          echo "Melbourne : $(TZ=Australia/Melbourne date '+%Y-%m-%d %H:%M:%S %a')"
           echo "触发方式: ${{ github.event_name }}"
 
       - name: 决定运行参数
@@ -75,7 +75,7 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_WEBHOOK_URL_EVENING: ${{ secrets.DISCORD_WEBHOOK_URL_EVENING }}
           DISCORD_MENTION: ${{ secrets.DISCORD_MENTION }}
-          BRIEFING_TIMEZONE: ${{ vars.BRIEFING_TIMEZONE || 'Australia/Sydney' }}
+          BRIEFING_TIMEZONE: ${{ vars.BRIEFING_TIMEZONE || 'Australia/Melbourne' }}
           USER_NAME: ${{ vars.USER_NAME || '老李' }}
           DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL || 'deepseek-v4-pro' }}
         run: node src/index.mjs --mode=${{ steps.run.outputs.mode }} ${{ steps.run.outputs.flags }}
@@ -90,7 +90,7 @@ jobs:
             echo "状态没有变化，跳过提交"
             exit 0
           fi
-          git commit -m "chore(briefing): 更新状态 $(TZ=Australia/Sydney date '+%Y-%m-%d %H:%M')"
+          git commit -m "chore(briefing): 更新状态 $(TZ=Australia/Melbourne date '+%Y-%m-%d %H:%M')"
           git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || true
           git push
 

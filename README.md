@@ -2,7 +2,9 @@
 
 每天早上 **07:00** 一份早报，晚上 **21:30** 一份复盘，推送到你的 Discord 频道。
 
-内容包含：**今天的任务** + **arXiv 论文精选（机器人 / 自动化，本科可读）** + **科技动态** + **国内要闻快速解读（央视新闻 + 新闻联播）**。
+内容包含：**墨尔本天气** + **今天的任务** + **arXiv 论文精选（机器人 / 自动化，本科可读）** + **科技动态** + **国内要闻快速解读（央视新闻 + 新闻联播）**。
+
+晚间复盘包含：**明日天气** + 当天完成情况 + 明日建议。
 
 ---
 
@@ -187,7 +189,7 @@ gh workflow run briefing.yml -f mode=morning -f dry_run=false
 > |---|---|---|
 > | `DISCORD_WEBHOOK_URL_EVENING` | Secret | 复用 `DISCORD_WEBHOOK_URL` |
 > | `DISCORD_MENTION` | Secret | 不 @ 人 |
-> | `BRIEFING_TIMEZONE` | Variable | `Australia/Sydney` |
+> | `BRIEFING_TIMEZONE` | Variable | `Australia/Melbourne` |
 > | `USER_NAME` | Variable | `老李` |
 > | `DEEPSEEK_MODEL` | Variable | `deepseek-v4-pro` |
 
@@ -195,10 +197,10 @@ gh workflow run briefing.yml -f mode=morning -f dry_run=false
 
 ## 三、关于定时与夏令时
 
-GitHub Actions 的 cron **只认 UTC**，而悉尼有夏令时（AEST UTC+10 / AEDT UTC+11），
+GitHub Actions 的 cron **只认 UTC**，而墨尔本有夏令时（AEST UTC+10 / AEDT UTC+11），
 所以工作流把**两个候选时刻都排上了**，真正发不发由脚本按本地时间判断：
 
-| 简报 | 悉尼时间 | 夏令时 (AEDT) | 冬令时 (AEST) |
+| 简报 | 墨尔本时间 | 夏令时 (AEDT, 10月~4月) | 冬令时 (AEST, 4月~10月) |
 |---|---|---|---|
 | 早报 | 07:00 | 20:00 UTC | 21:00 UTC |
 | 复盘 | 21:30 | 10:30 UTC | 11:30 UTC |
@@ -211,12 +213,43 @@ GitHub Actions 的 cron **只认 UTC**，而悉尼有夏令时（AEST UTC+10 / A
 
 ---
 
-## 四、定制
+## 四、天气
+
+早报第一块就是天气，复盘里会带**明天**的天气。数据来自 [Open-Meteo](https://open-meteo.com)：
+**免费、不需要 API Key**，所以没有额外的注册和配额烦恼。
+
+包含：今日实况（实际温度 / 体感 / 湿度 / 风速）、今明预报（温度区间、天气、降水概率、雨量、
+最大风速、UV 指数、日出日落）。AI 会基于这些**真实数字**给一句穿衣和出行建议 ——
+比如「体感只有 5°C，风大，别只穿卫衣」，而不是泛泛地说「今天有点冷」。
+
+**换位置**：改 `config/sources.json` 里的 `weather` 段：
+
+```json
+"weather": {
+  "enabled": true,
+  "name": "墨尔本 Oakleigh East",
+  "postcode": "3166",
+  "latitude": -37.9,
+  "longitude": 145.1167,
+  "timezone": "Australia/Melbourne",
+  "forecastDays": 2
+}
+```
+
+`latitude` / `longitude` 去 [open-meteo 地理编码](https://geocoding-api.open-meteo.com/v1/search?name=Oakleigh+East&count=5&countryCode=AU)
+查，或者地图上右键复制坐标。天气是区域性的，精确到 suburb 就够了。
+
+> 天气抓取失败不影响其他内容 —— 那一块会自动消失，简报照常发。
+
+---
+
+## 五、定制
 
 | 想改什么 | 改哪里 |
 |---|---|
 | AI 对你的了解（专业方向、在乎的技术、不想要什么） | `config/profile.md` ← **最值得改的就是这个** |
 | 抓哪些 arXiv 分类、哪些新闻源、每天选几篇 | `config/sources.json` |
+| **天气**的位置（经纬度、地名、邮编） | `config/sources.json` 的 `weather` 段 |
 | 简报的排版和文案结构 | `src/render.mjs` |
 | AI 的提示词 | `src/prompts.mjs` |
 
@@ -225,7 +258,7 @@ GitHub Actions 的 cron **只认 UTC**，而悉尼有夏令时（AEST UTC+10 / A
 
 ---
 
-## 五、本地调试
+## 六、本地调试
 
 ```bash
 npm run dry:morning     # 早报，预览不推送
@@ -248,7 +281,7 @@ npm run morning -- --mode=...  # 见 package.json
 
 ---
 
-## 六、代码结构
+## 七、代码结构
 
 ```
 src/
@@ -262,6 +295,7 @@ src/
 ├── prompts.mjs      早报 / 复盘提示词
 ├── render.mjs       结构化结果 → Discord embed
 ├── push.mjs         Webhook 推送（自动分片、限流重试）
+├── sources/weather.mjs  天气（Open-Meteo，免费无需 API Key）
 ├── task-action.mjs  快捷任务按钮的后端（加任务 / 按关键词完成任务）
 ├── notify-failure.mjs 失败告警
 └── util.mjs         抓取、时区、文本工具
@@ -287,6 +321,7 @@ setup/
 | 量子位 / IT之家 | `qbitai.com/feed` / `ithome.com/rss/` |
 | 央视新闻 | `news.cctv.com` JSONP 接口 |
 | 新闻联播 | 每日文字稿（自动往前找 1~3 天） |
+| 天气 | Open-Meteo `api.open-meteo.com`（实况 + 今明预报 + UV + 日出日落） |
 
 **零第三方依赖** —— 只用 Node 内置能力，云端不用 `npm install`，启动只要几秒。
 少一层依赖就少一类「昨天还好好的今天跑不起来」。
@@ -299,7 +334,7 @@ setup/
 
 ---
 
-## 七、出问题时
+## 八、出问题时
 
 | 现象 | 原因 / 处理 |
 |---|---|
@@ -312,7 +347,7 @@ setup/
 
 ---
 
-## 八、和旧版的关系
+## 九、和旧版的关系
 
 旧的 Discord Bot 代码完整保留在 `legacy/` 目录（原 `src/`、`run_bot.py`、`start_bot.bat`、
 旧的 README），随时可以翻回去看。

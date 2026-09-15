@@ -59,7 +59,7 @@ export const config = {
   webhookUrlEvening: (process.env.DISCORD_WEBHOOK_URL_EVENING || '').trim(),
   mention: (process.env.DISCORD_MENTION || '').trim(),
 
-  timeZone: (process.env.BRIEFING_TIMEZONE || 'Australia/Sydney').trim(),
+  timeZone: (process.env.BRIEFING_TIMEZONE || 'Australia/Melbourne').trim(),
   userName: (process.env.USER_NAME || '老李').trim(),
 
   sources: readJson('config/sources.json'),

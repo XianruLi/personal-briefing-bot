@@ -53,6 +53,7 @@ function rawAiMorning(data) {
       id: n.id, titleZh: n.title, topic: '', summary: n.summary.slice(0, 180), take: '',
     })),
     xwlb: null,
+    weather: null,
     tip: '',
   };
 }
@@ -65,6 +66,7 @@ function rawAiEvening(grouped, newlyDone) {
     remaining: [...grouped.overdue, ...grouped.dueToday, ...grouped.upcoming, ...grouped.noDue].slice(0, 5).map((t) => t.title),
     tomorrow: newlyDone.length ? [] : grouped.overdue.slice(0, 3).map((t) => t.title),
     comment: '',
+    weather: null,
     tip: '',
   };
 }
@@ -118,6 +120,11 @@ async function runEvening({ args, state, zone }) {
     ? state.morningSnapshot.openCount
     : null;
 
+  // 复盘只抓天气（明天穿什么、要不要带伞），不抓论文和新闻
+  const data = await collectAll({ state, mode: 'evening', timeZone: config.timeZone });
+  const weather = data.weather;
+  if (data.errors.length) console.warn('[collect] ' + data.errors.join(' | '));
+
   console.log('[tasks] 未完成 ' + grouped.openCount + ' 项，已完成 ' + grouped.completed.length + ' 项，今天新勾掉 ' + newlyDone.length + ' 项');
 
   let ai;
@@ -125,7 +132,7 @@ async function runEvening({ args, state, zone }) {
     ai = rawAiEvening(grouped, newlyDone);
   } else {
     try {
-      const { system, user } = buildEveningPrompt({ grouped, todayIso, zone, newlyDone, morningOpenCount });
+      const { system, user } = buildEveningPrompt({ grouped, todayIso, zone, newlyDone, morningOpenCount, weather });
       ai = await chatJson({ system, user, label: '复盘', maxTokens: 8000 });
     } catch (err) {
       console.error('[ai] 复盘生成失败，改用原始内容兜底: ' + err.message);
@@ -133,7 +140,7 @@ async function runEvening({ args, state, zone }) {
     }
   }
 
-  const rendered = renderEvening({ ai, grouped, zone, newlyDone, morningOpenCount });
+  const rendered = renderEvening({ ai, grouped, zone, newlyDone, morningOpenCount, weather, todayIso });
   return { rendered, grouped, todayIso, newlyDone };
 }
 
