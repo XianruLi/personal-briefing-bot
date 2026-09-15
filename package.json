@@ -1,0 +1,17 @@
+{
+  "name": "personal-briefing-bot",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "个人咨询管家 — 每日早报 / 晚间复盘，GitHub Actions 定时推送到 Discord，无需本机开机",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "morning": "node src/index.mjs --mode=morning --force",
+    "evening": "node src/index.mjs --mode=evening --force",
+    "dry:morning": "node src/index.mjs --mode=morning --force --dry-run",
+    "dry:evening": "node src/index.mjs --mode=evening --force --dry-run",
+    "dry:offline": "node src/index.mjs --mode=morning --force --dry-run --no-ai"
+  }
+}

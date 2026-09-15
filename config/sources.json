@@ -1,0 +1,61 @@
+{
+  "arxiv": {
+    "feeds": [
+      {
+        "id": "cs.RO",
+        "name": "机器人学 cs.RO",
+        "url": "https://rss.arxiv.org/rss/cs.RO"
+      },
+      {
+        "id": "eess.SY",
+        "name": "系统与控制 eess.SY",
+        "url": "https://rss.arxiv.org/rss/eess.SY"
+      },
+      {
+        "id": "cs.CV",
+        "name": "计算机视觉 cs.CV",
+        "url": "https://rss.arxiv.org/rss/cs.CV"
+      }
+    ],
+    "maxCandidates": 45,
+    "maxPicks": 3,
+    "announceTypes": [
+      "new"
+    ],
+    "abstractChars": 900
+  },
+  "techNews": {
+    "feeds": [
+      {
+        "id": "ieee",
+        "name": "IEEE Spectrum",
+        "url": "https://spectrum.ieee.org/feeds/feed.rss"
+      },
+      {
+        "id": "ros",
+        "name": "ROS Discourse",
+        "url": "https://discourse.ros.org/latest.rss"
+      },
+      {
+        "id": "qbitai",
+        "name": "量子位",
+        "url": "https://www.qbitai.com/feed"
+      },
+      {
+        "id": "ithome",
+        "name": "IT之家",
+        "url": "https://www.ithome.com/rss/"
+      }
+    ],
+    "maxPerFeed": 6,
+    "maxPicks": 3
+  },
+  "cnNews": {
+    "cctvApi": "https://news.cctv.com/2019/07/gaiban/cmsdatainterface/page/news_1.jsonp",
+    "xwlbRawTemplate": "https://raw.githubusercontent.com/aqen/xin-wen-lian-bo/master/news/{date}.md",
+    "xwlbPageUrl": "https://tv.cctv.com/lm/xwlb/",
+    "maxCctv": 15,
+    "maxXwlbChars": 5000,
+    "maxPicks": 4
+  }
+}

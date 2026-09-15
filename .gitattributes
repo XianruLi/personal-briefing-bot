@@ -1,0 +1,2 @@
+# 统一用 LF 存储：GitHub Actions 跑在 Linux 上，避免 CRLF 带来的奇怪问题
+text=auto eol=lf
