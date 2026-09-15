@@ -115,7 +115,9 @@ export async function pushDiscord({ header, sections, webhookUrl, username = '�
     // 只有第一条真的 @ 人
     payload.allowed_mentions = i === 0 && mention ? { parse: ['users'] } : { parse: [] };
 
-    await post(url, payload);
+    const sent = await post(url, payload);
+    const msgId = sent && sent.id ? sent.id : '(无 id)';
+    console.log('[push] 第 ' + (i + 1) + '/' + messages.length + ' 条已送达，message id = ' + msgId);
     if (i < messages.length - 1) await sleep(1200);
   }
   return messages.length;
