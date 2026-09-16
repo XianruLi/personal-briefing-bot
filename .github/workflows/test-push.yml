@@ -1,0 +1,29 @@
+name: 🔔 推送自检
+
+# 用来验证「GitHub → 各推送渠道」这条链路通不通。
+# 本地测能发出去，不代表 GitHub 的服务器能发出去（网络环境不同）。
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 拉取仓库
+        uses: actions/checkout@v6
+
+      - name: 准备 Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: 向所有已配置渠道发送测试消息
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          FEISHU_SECRET: ${{ secrets.FEISHU_SECRET }}
+          WECOM_WEBHOOK_URL: ${{ secrets.WECOM_WEBHOOK_URL }}
+        run: node src/test-push.mjs
