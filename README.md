@@ -239,8 +239,14 @@ GitHub Actions 的 cron **只认 UTC**，而墨尔本有夏令时（AEST UTC+10 
    | `GH_REPO` | Text | `XianruLi/personal-briefing-bot` |
    | `GH_WORKFLOW` | Text | `briefing.yml` |
 
-4. Settings → Triggers → Cron Triggers 加 4 条（Cloudflare 用 UTC）：
-   `0 20 * * *`、`0 21 * * *`、`30 10 * * *`、`30 11 * * *`
+4. Settings → Triggers → Cron Triggers 加 2 条（Cloudflare 的 cron 用 UTC）：
+
+   | Cron 表达式 | 作用 |
+   |---|---|
+   | `0 20,21 * * *` | 早报：墨尔本 07:00（含夏令时两个分支） |
+   | `30 10,11 * * *` | 复盘：墨尔本 21:30（含夏令时两个分支） |
+
+   一天共触发 4 次，其中 2 次会因为不在时间窗口内而自动跳过。
 5. 浏览器访问一次 Worker 地址，返回 `"dispatched": true` 即成功
 
 **GitHub 令牌怎么建（权限最小化）：**

@@ -17,13 +17,14 @@
  *      GH_TOKEN   （类型选 Secret）你的 GitHub 细粒度令牌
  *      GH_REPO    （类型选 Text）  XianruLi/personal-briefing-bot
  *      GH_WORKFLOW（类型选 Text）  briefing.yml
- * 5. Settings → Triggers → Cron Triggers，加 4 条（Cloudflare 用 UTC）：
- *      0 20 * * *
- *      0 21 * * *
- *      30 10 * * *
- *      30 11 * * *
- *    （为什么是 4 条：墨尔本有夏令时，4 条里总会命中正确的那条；
- *      真正发不发由工作流自己按本地时间判断，不会重复推送。）
+ * 5. Settings → Triggers → Cron Triggers，加 2 条（Cloudflare 的 cron 用 UTC）：
+ *      0 20,21 * * *
+ *      30 10,11 * * *
+ *    说明：墨尔本有夏令时（AEST UTC+10 / AEDT UTC+11）
+ *      早报 07:00 墨尔本 = 21:00 UTC（冬令时）或 20:00 UTC（夏令时）
+ *      复盘 21:30 墨尔本 = 11:30 UTC（冬令时）或 10:30 UTC（夏令时）
+ *    所以每条都用「小时列表」把两个可能的小时都排上，一天共触发 4 次。
+ *    真正发不发由工作流按本地时间判断，多触发的会自动跳过，不会重复推送。
  * 6. 部署完在浏览器访问一次 Worker 地址，应当返回 dispatched；
  *    也可以访问 <地址>?dry=1 只看配置不真的触发。
  *
