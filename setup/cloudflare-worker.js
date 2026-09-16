@@ -10,9 +10,9 @@
  * ------------------------------------------------------------
  * 部署步骤（网页控制台，不用装 wrangler）
  * ------------------------------------------------------------
- * 1. https://dash.cloudflare.com → 注册/登录 → 左侧 Workers & Pages
+ * 1. https://dash.cloudflare.com → 注册/登录 → 左侧 Workers & Pages（或叫 Compute）
  * 2. Create → Workers → 起个名字（如 briefing-cron）→ Deploy
- * 3. 点 Edit code，把本文件内容整个粘进去，Deploy
+ * 3. 点 Edit code → 全选删掉模板代码 → 把本文件内容整个粘进去 → Deploy
  * 4. Settings → Variables and Secrets，加三个：
  *      GH_TOKEN   （类型选 Secret）你的 GitHub 细粒度令牌
  *      GH_REPO    （类型选 Text）  XianruLi/personal-briefing-bot
@@ -36,7 +36,7 @@
  *   - Repository access: Only select repositories → 只勾 personal-briefing-bot
  *   - Permissions → Repository permissions → Actions: Read and write
  *   - 有效期按需（最长 1 年），到期后来这里换新令牌并更新 Worker 变量
- * 生成后复制（ghp_ 开头），填到 Worker 的 GH_TOKEN。
+ * 生成后复制（细粒度令牌以 github_pat_ 开头），填到 Worker 的 GH_TOKEN。
  */
 
 export default {
