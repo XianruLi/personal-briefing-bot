@@ -17,6 +17,8 @@
  *      GH_TOKEN   （类型选 Secret）你的 GitHub 细粒度令牌
  *      GH_REPO    （类型选 Text）  XianruLi/personal-briefing-bot
  *      GH_WORKFLOW（类型选 Text）  briefing.yml
+ *    （可选）GH_TRIGGER_PATH（Text）自定义手动触发的路径，默认 trigger
+ *      设成只有你知道的词，别人就猜不到触发地址
  * 5. Settings → Triggers → Cron Triggers，加 2 条（Cloudflare 的 cron 用 UTC）：
  *      0 20,21 * * *
  *      30 10,11 * * *
@@ -25,8 +27,9 @@
  *      复盘 21:30 墨尔本 = 11:30 UTC（冬令时）或 10:30 UTC（夏令时）
  *    所以每条都用「小时列表」把两个可能的小时都排上，一天共触发 4 次。
  *    真正发不发由工作流按本地时间判断，多触发的会自动跳过，不会重复推送。
- * 6. 部署完在浏览器访问一次 Worker 地址，应当返回 dispatched；
- *    也可以访问 <地址>?dry=1 只看配置不真的触发。
+ * 6. 部署完在浏览器访问 Worker 根地址 —— 只会返回自检信息，不会触发；
+ *    访问 <地址>/trigger 才会真的触发一次；
+ *    访问 <地址>/trigger?dry=1 只看配置不触发。
  *
  * ------------------------------------------------------------
  * GitHub 令牌怎么建（细粒度 PAT，权限最小化）
@@ -46,9 +49,26 @@ export default {
     console.log('[cron] ' + (controller.cron || '?') + ' -> ' + JSON.stringify(result));
   },
 
-  // 手动访问 Worker 地址也能触发一次，方便测试
+  // 手动访问时：根路径只做自检，必须访问指定路径才真正触发。
+  // 为什么这么做：浏览器打开网页时还会自动请求 /favicon.ico，
+  // 如果对任何路径都触发，一次访问就会产生两三次运行，
+  // 而且任何人扫到这个地址都能白白消耗你的 Actions 额度。
   async fetch(request, env) {
     const url = new URL(request.url);
+    const triggerPath = '/' + String(env.GH_TRIGGER_PATH || 'trigger').replace(/^\/+/, '');
+
+    if (url.pathname !== triggerPath) {
+      return json({
+        ok: true,
+        service: '个人咨询管家 · 外部定时触发器',
+        usage: '访问 ' + triggerPath + ' 才会触发一次；加 ?dry=1 只看配置不触发',
+        triggerPath,
+        repo: env.GH_REPO || '(未配置 GH_REPO)',
+        workflow: env.GH_WORKFLOW || '(未配置 GH_WORKFLOW)',
+        hasToken: Boolean(env.GH_TOKEN),
+      });
+    }
+
     if (url.searchParams.get('dry') === '1') {
       return json({
         ok: true,
@@ -59,6 +79,7 @@ export default {
         note: '配置齐全的话，去掉 ?dry=1 再访问就会真的触发一次',
       });
     }
+
     const result = await dispatch(env);
     return json(result, result.ok ? 200 : 500);
   },
