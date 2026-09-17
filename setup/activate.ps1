@@ -1,16 +1,33 @@
-# ============================================================
+﻿# ============================================================
 #  个人咨询管家 · 一次性激活脚本
 #
 #  作用：补 GitHub 权限 → 推送定时工作流 → 写入 Secrets → 跑一次测试
 #  用法：右键此文件 → 使用 PowerShell 运行
 #        （或在项目根目录执行： powershell -ExecutionPolicy Bypass -File setup\activate.ps1）
+#
+#  ⚠️ 本文件必须保存为「UTF-8 带 BOM」。
+#     Windows PowerShell 5.1 在没有 BOM 时按 ANSI(GBK) 读取脚本，
+#     中文会变乱码导致语法错误、窗口一闪而过。
 # ============================================================
 
-$ErrorActionPreference = 'Stop'
+# 不用 Stop：git / gh 会把正常输出写到 stderr，Stop 会把它误判成致命错误
+$ErrorActionPreference = 'Continue'
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
 function Say($msg, $color = 'Cyan') { Write-Host $msg -ForegroundColor $color }
+
+# 安全地调用外部命令
+function Invoke-Native($file, [string[]]$arguments) {
+  $prev = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  $out = & $file @arguments 2>&1 | Out-String
+  $code = $LASTEXITCODE
+  $ErrorActionPreference = $prev
+  return @{ Output = $out; Code = $code }
+}
 
 Say "=============================================="
 Say "  个人咨询管家 · 激活"

@@ -10,7 +10,8 @@ const TASK_LINE = /^(\s*)[-*]\s+\[([ xX])\]\s+(.*?)\s*$/;
 const SECTION_LINE = /^\s*#{2,4}\s+(.+?)\s*$/;
 const DUE_RE = /@(\d{4}-\d{2}-\d{2})/;
 const PRIO_RE = /!(高|中|低|high|medium|low)/i;
-const TAG_RE = /(^|\s)#([^\s#]+)/g;
+// 兼容「#标签」和「# 标签」两种写法 —— 很多人习惯在 # 后面加空格
+const TAG_RE = /(^|\s)#\s*([^\s#]+)/g;
 
 const PRIORITY_MAP = {
   '高': 'high', high: 'high',
