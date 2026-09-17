@@ -45,6 +45,15 @@ jobs:
       - name: 拉取仓库
         uses: actions/checkout@v6
 
+      # 现在有两套闹钟（Cloudflare + GitHub 自带），可能几乎同时触发。
+      # checkout 用的是「触发时的提交」，可能比另一套刚提交的去重状态旧，
+      # 于是两边都以为「今天还没发过」而重复推送。这里强制同步到最新提交堵住这个竞态。
+      - name: 同步到最新提交（避免用到过期的去重状态）
+        run: |
+          git fetch --depth=1 origin "${GITHUB_REF_NAME}"
+          git reset --hard "origin/${GITHUB_REF_NAME}"
+          echo "已同步到 $(git rev-parse --short HEAD)"
+
       - name: 准备 Node
         uses: actions/setup-node@v6
         with:
