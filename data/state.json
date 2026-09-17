@@ -1,7 +1,7 @@
 {
   "version": 1,
   "lastMorningDate": "2026-09-17",
-  "lastEveningDate": null,
+  "lastEveningDate": "2026-09-17",
   "seenPaperIds": [
     "2609.13243",
     "2609.13270",
@@ -41,10 +41,12 @@
     "17oq475",
     "189qy0"
   ],
-  "completedAt": {},
+  "completedAt": {
+    "完成 fyp 毕业设计意向表格的填写": "2026-09-17"
+  },
   "morningSnapshot": {
     "date": "2026-09-17",
     "openCount": 8
   },
-  "updatedAt": "2026-09-16T21:01:57.970Z"
+  "updatedAt": "2026-09-17T11:31:45.231Z"
 }
