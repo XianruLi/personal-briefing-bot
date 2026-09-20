@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastMorningDate": "2026-09-20",
+  "lastMorningDate": "2026-09-21",
   "lastEveningDate": "2026-09-20",
   "seenPaperIds": [
     "2609.13243",
@@ -65,14 +65,19 @@
     "e9ez2x",
     "gt500g",
     "197h7nq",
-    "190ytnv"
+    "190ytnv",
+    "1hxv6l",
+    "1fv7feo",
+    "o7rcg4",
+    "35p8f",
+    "otuc67"
   ],
   "completedAt": {
     "fyp 周组会": "2026-09-18"
   },
   "morningSnapshot": {
-    "date": "2026-09-20",
+    "date": "2026-09-21",
     "openCount": 2
   },
-  "updatedAt": "2026-09-20T11:31:26.140Z"
+  "updatedAt": "2026-09-20T21:01:45.432Z"
 }
