@@ -1,7 +1,7 @@
 {
   "version": 1,
   "lastMorningDate": "2026-09-21",
-  "lastEveningDate": "2026-09-20",
+  "lastEveningDate": "2026-09-21",
   "seenPaperIds": [
     "2609.13243",
     "2609.13270",
@@ -73,11 +73,11 @@
     "otuc67"
   ],
   "completedAt": {
-    "fyp 周组会": "2026-09-18"
+    "3121 面试准备": "2026-09-21"
   },
   "morningSnapshot": {
     "date": "2026-09-21",
     "openCount": 2
   },
-  "updatedAt": "2026-09-20T21:01:45.432Z"
+  "updatedAt": "2026-09-21T11:31:13.744Z"
 }
