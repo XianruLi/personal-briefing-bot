@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastMorningDate": "2026-09-22",
+  "lastMorningDate": "2026-09-23",
   "lastEveningDate": "2026-09-22",
   "seenPaperIds": [
     "2609.13243",
@@ -23,7 +23,10 @@
     "2609.19393",
     "2609.20965",
     "2609.20983",
-    "2609.21005"
+    "2609.21005",
+    "2609.22276",
+    "2609.22404",
+    "2609.22319"
   ],
   "seenNewsIds": [
     "nngr64",
@@ -80,14 +83,21 @@
     "1t4tnwk",
     "8m1p5j",
     "123q9mc",
-    "dkoep4"
+    "dkoep4",
+    "m9tvig",
+    "1x883hw",
+    "o92uwq",
+    "fgwmzf",
+    "1eqrf4p",
+    "qvbygm",
+    "bqcju1"
   ],
   "completedAt": {
     "3121 面试准备": "2026-09-21"
   },
   "morningSnapshot": {
-    "date": "2026-09-22",
-    "openCount": 1
+    "date": "2026-09-23",
+    "openCount": 4
   },
-  "updatedAt": "2026-09-22T11:31:28.083Z"
+  "updatedAt": "2026-09-22T21:02:25.485Z"
 }
