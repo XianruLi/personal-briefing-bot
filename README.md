@@ -210,24 +210,33 @@ GitHub Actions 的 cron **只认 UTC**，而墨尔本有夏令时（AEST UTC+10 
 | 复盘 | 21:30 | 10:30 UTC | 11:30 UTC |
 
 脚本内部还会检查「今天这个时段是不是已经推过了」（记录在 `data/state.json`），
-所以两排 cron 不会导致重复推送 —— **夏令时切换后你什么都不用改**。
+所以多排几组 cron 不会导致重复推送 —— **夏令时切换后你什么都不用改**。
 
-想换推送时间：改 `.github/workflows/briefing.yml` 里的 cron，以及
-`src/index.mjs` 里的 `MORNING_HOUR` / `EVENING_HOUR`（在 `src/config.mjs`）。
+> **想改推送时间？** 见 [6.1 改发送时间](#61-改发送时间)。
+> 一句话：Cloudflare 的 cron 和 GitHub Variables 要一起改。
 
-### ⚠️ 已知问题：GitHub 自带定时器在新私有仓库上不触发
+### 为什么用 Cloudflare 当闹钟（以及 GitHub 定时器的历史问题）
 
-**实测结论（2026-09-15）**：本仓库从创建到现在的 7 小时内，约 13 个应触发的 cron 时刻
-**一次都没触发**，包括一个每 5 分钟的探针。而手动触发（`workflow_dispatch`）完全正常。
+**2026-09-15 实测**：本仓库从创建到当时的 7 小时内，约 13 个应触发的 cron 时刻
+**一次都没触发**，包括一个每 5 分钟的探针；而手动触发完全正常。
 工作流文件、Actions 权限、仓库状态逐项核对均正常。
 
 这匹配一个**已知的 GitHub bug：全新的私有仓库上 `schedule` 触发器不工作**
 （社区讨论 [#201436](https://github.com/orgs/community/discussions/201436)，症状完全一致）。
-强制重新注册 schedule、disable/enable 工作流都试过，无效。
 
-**绕开办法：用外部定时器调用 GitHub API 来触发。** 业务代码一行都不用改，换的只是「闹钟」。
+**后来它自己恢复了**（2026-09-17 起观察到 `schedule` 事件正常运行），
+推测就是「新仓库」这个条件随时间消失。
 
-方案见 `setup/cloudflare-worker.js`（Cloudflare Workers 定时触发，推荐）：
+**但现在仍然是 Cloudflare 当主闹钟**，原因有三：
+
+1. Cloudflare 的触发**非常准时**（实测都在目标时刻 +43 秒左右），GitHub 的经常延迟
+2. GitHub 那次故障说明它**不可依赖**，留作备份更稳妥
+3. 两套一起跑**不会重复推送**（靠 `data/state.json` 去重），所以留着纯属白赚的冗余
+
+> **并发安全**：工作流启动时会强制同步到最新提交，避免两套闹钟几乎同时触发时
+> 用到了过期的去重状态而重复推送。
+
+**Cloudflare Worker 部署步骤**（代码在 `setup/cloudflare-worker.js`）：
 
 1. 注册 [Cloudflare](https://dash.cloudflare.com) → Workers & Pages → Create → Workers → Deploy
 2. Edit code，把 `setup/cloudflare-worker.js` 整个粘进去 → Deploy
@@ -247,7 +256,8 @@ GitHub Actions 的 cron **只认 UTC**，而墨尔本有夏令时（AEST UTC+10 
    | `30 10,11 * * *` | 复盘：墨尔本 21:30（含夏令时两个分支） |
 
    一天共触发 4 次，其中 2 次会因为不在时间窗口内而自动跳过。
-5. 浏览器访问一次 Worker 地址，返回 `"dispatched": true` 即成功
+5. 浏览器访问 Worker 根地址 → 只返回自检信息（不触发）；
+   访问 `<地址>/trigger` → 才真正触发一次
 
 **GitHub 令牌怎么建（权限最小化）：**
 头像 → Settings → Developer settings → Personal access tokens → Fine-grained tokens →
@@ -343,18 +353,118 @@ Generate new token：
 
 ---
 
-## 六、定制
+## 六、改造指南
+
+### 6.1 改发送时间
+
+**要改两个地方，必须对齐**（一个是"闹钟"，一个是"门卫"）：
+
+| 改什么 | 在哪改 | 作用 |
+|---|---|---|
+| **闹钟何时响** | Cloudflare → 你的 Worker → **Settings → Triggers → Cron Triggers** | 到点叫醒工作流（用 **UTC**） |
+| **响了之后发不发** | GitHub 仓库 → **Settings → Secrets and variables → Actions → Variables** | 工作流醒来后看墨尔本几点，不在窗口内就跳过 |
+
+只改一个会出问题：
+- 只改 Cloudflare → 工作流醒来发现不在窗口内，**静默跳过**（不报错，但收不到）
+- 只改 Variable → 闹钟还是老时间响，照样跳过
+
+**UTC 换算规则**（墨尔本）：
+
+| 季节 | 墨尔本 | 对应的 UTC |
+|---|---|---|
+| 冬令时 AEST | UTC+10 | 本地时间 **−10 小时** |
+| 夏令时 AEDT（10月~4月） | UTC+11 | 本地时间 **−11 小时** |
+
+**示例：想改成早上 8:00 / 晚上 22:00**
+
+1. 本地 08:00 → 冬令时是 UTC 22:00、夏令时是 UTC 21:00 → 写 `0 21,22 * * *`
+2. 本地 22:00 → 冬令时是 UTC 12:00、夏令时是 UTC 11:00 → 写 `0 11,12 * * *`
+3. GitHub Variables 改成 `MORNING_HOUR=8`、`EVENING_HOUR=22`、`EVENING_MINUTE=0`
+
+> **为什么每条 cron 要写两个小时**：因为夏令时切换会让同一个本地时间对应两个不同的 UTC 小时。
+> 两个都排上，由工作流的窗口判断决定哪个真正生效，并且靠 `data/state.json` 去重保证不会发两次。
+> **这样你一年只需要改一次都不到 —— 夏令时切换本身不用管。**
+
+### 6.2 改推送内容
+
+全部集中在 **`config/sources.json`**，改完直接提交即可。
+
+| 想改什么 | 改哪个字段 |
+|---|---|
+| 增删新闻源 | 对应板块的 `feeds` 数组 |
+| 每天推几条 | 对应板块的 `maxPicks`（AI 从中挑选的数量） |
+| 每个源抓几条候选 | `maxPerFeed` |
+| **丢弃多少天前的旧闻** | `maxAgeDays` |
+| arXiv 抓哪些分类 | `arxiv.feeds`（默认 cs.RO / eess.SY / cs.CV） |
+| 天气位置、邮编、坐标 | `weather` 段 |
+
+各板块对应简报里的哪一块：
+
+| 板块 | 简报里的位置 |
+|---|---|
+| `weather` | 🌤 今日天气（第一块） |
+| `arxiv` | 📄 arXiv 论文精选 |
+| `techNews` | 📰 科技动态 |
+| `cnNews` | 🇨🇳 国内要闻速读（央视 + 新闻联播） |
+| `politics` | 🌏 时政要闻与解读 |
+
+#### ⚠️ 加新闻源之前，务必先验证它「还活着」
+
+**这是踩过的坑**：很多中文媒体的 RSS 接口还在，但内容早就停更了——
+新华社的 RSS 停在 **2022-12**，人民网的停在 **2025-06**。不验证的话，
+会把四年前的旧闻当成今天的新闻推给你。
+
+两条防线：
+
+1. **`maxAgeDays`（默认 3 天）** —— 代码会从 `pubDate` 或链接里的日期
+   （`/2022-12/14/`、`/2026/09/24/`）推断发布时间，超期的条目直接丢弃，
+   并在日志里打印 `丢弃 N 条超过 3 天的旧闻（源可能已停更）`。
+2. **加源前本地跑一次**：
+
+   ```powershell
+   npm run dry:offline    # 不调 AI，只用抓到的原文拼，几秒出结果
+   ```
+
+   如果某个板块是空的，或者日志里出现"丢弃…旧闻"，说明那个源不要加。
+
+**已验证可用的源（2026-09）**：
+
+| 板块 | 源 | 状态 |
+|---|---|---|
+| 时政 | 中新网·国内 / 国际 / 财经 | ✅ 当天更新 |
+| 时政 | RT（今日俄罗斯） | ✅ 当天更新 |
+| 时政 | ~~新华社~~ / ~~人民网~~ | ❌ RSS 已停更，别加 |
+| 时政 | ~~BBC / CNN / 经济学人~~ | 🚫 按你的要求不采用 |
+| 时政 | ~~China Daily~~ | ❌ 官方 RSS 已下线（/rss/ 全部 404） |
+| 科技 | IEEE Spectrum / ROS Discourse / 量子位 / IT之家 | ✅ |
+| 国内 | 央视新闻接口 / 新闻联播文字稿 | ✅ |
+
+### 6.3 改 AI 的风格与侧重
 
 | 想改什么 | 改哪里 |
 |---|---|
-| AI 对你的了解（专业方向、在乎的技术、不想要什么） | `config/profile.md` ← **最值得改的就是这个** |
-| 抓哪些 arXiv 分类、哪些新闻源、每天选几篇 | `config/sources.json` |
-| **天气**的位置（经纬度、地名、邮编） | `config/sources.json` 的 `weather` 段 |
-| 简报的排版和文案结构 | `src/render.mjs` |
-| AI 的提示词 | `src/prompts.mjs` |
+| **AI 对你的了解**（专业方向、在乎什么、不想要什么） | `config/profile.md` ← **最值得改的就是这个** |
+| AI 的挑选原则、解读角度、语气 | `src/prompts.mjs` 的 `STYLE_RULES` 和各板块规则 |
+| 每段说什么、排版长什么样 | `src/render.mjs` |
+| 用哪个模型、推理强度 | GitHub Variables `DEEPSEEK_MODEL`、`.env` 的 `DEEPSEEK_REASONING_EFFORT` |
 
-`config/profile.md` 写得越具体，AI 挑论文就越准。比如写「我在用 Yahboom 小车跑 Nav2 导航」，
+`config/profile.md` 越具体，AI 挑东西越准。比如写「我在用 Yahboom 小车跑 Nav2 导航」，
 它就会优先挑导航相关、能落地的论文，而不是纯理论证明。
+
+### 6.4 改完怎么验证
+
+1. **本地预览**（不推送、不写文件）：
+   ```powershell
+   npm run dry:morning     # 早报
+   npm run dry:evening     # 复盘
+   npm run dry:offline     # 不调 AI，快速测数据源
+   ```
+2. **云端验证**：仓库 → Actions → **🔔 推送自检** → Run workflow
+   （验证 GitHub 服务器能不能真的发到各渠道）
+3. **真实预览**：Actions → **每日简报** → Run workflow → mode 选 `morning`，
+   勾上 `dry_run` 和 `force` —— 会在日志里打印完整简报但不真发
+
+> 改完记得 `git push`。**云端跑的是仓库里的代码**，本地改了不推等于没改。
 
 ---
 
