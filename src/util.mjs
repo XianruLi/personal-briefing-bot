@@ -139,3 +139,48 @@ export function daysBetween(a, b) {
   };
   return Math.round((toTs(a) - toTs(b)) / 86400000);
 }
+
+// ============================================================
+//  新闻时效性校验
+//
+//  为什么需要：有些 RSS 源早就停更了，但接口还活着。
+//  比如新华社和人民网的 RSS，内容停留在几年前，抓下来会被当成"今天的新闻"。
+//  没有这道校验，旧闻就会悄悄混进简报里 —— 比抓不到更糟。
+// ============================================================
+
+/**
+ * 尽力判断一条 feed 条目的发布时间。
+ * 优先用 pubDate；很多中文源不给 pubDate，就从链接里抠日期（/2022-12/ 、/2026/09/24/ 等）。
+ * @returns {Date|null} 判断不出来时返回 null
+ */
+export function itemPublishedAt(item) {
+  const raw = item && item.pubDate;
+  if (raw) {
+    const t = Date.parse(raw);
+    if (!Number.isNaN(t)) return new Date(t);
+  }
+  const link = String((item && item.link) || '');
+
+  // /2026/09/24/ 或 /2026-09-24/
+  let m = link.match(/\/(20\d{2})[-\/](\d{1,2})[-\/](\d{1,2})[\/\-]/);
+  if (m) return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  // /20260924/
+  m = link.match(/\/(20\d{2})(\d{2})(\d{2})\//);
+  if (m) return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  // /2026-12/ 或 /2026/09/  —— 只有年月，按当月 1 号算（偏保守）
+  m = link.match(/\/(20\d{2})[-\/](\d{1,2})[\/\-]/);
+  if (m) return new Date(Date.UTC(+m[1], +m[2] - 1, 1));
+
+  return null;
+}
+
+/**
+ * 判断一条新闻够不够新。
+ * 判断不出日期的条目不拦截（无法判定），但会标记 unknown，调用方可以据此记日志。
+ */
+export function isFresh(item, maxAgeDays = 7, now = Date.now()) {
+  const at = itemPublishedAt(item);
+  if (!at) return { fresh: true, unknown: true, at: null, ageDays: null };
+  const ageDays = (now - at.getTime()) / 86400000;
+  return { fresh: ageDays <= maxAgeDays, unknown: false, at, ageDays };
+}

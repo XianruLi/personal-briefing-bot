@@ -39,11 +39,18 @@ export async function chatJson({ system, user, label = 'AI', maxTokens = 4000, t
     body.thinking = { type: 'disabled' };
   }
 
+  // 思考模式的 reasoning token 也算在 max_tokens 里。
+  // 内容一多（比如加了时政源），思考就可能把预算吃光、正文变空或 JSON 被截断。
+  // 所以这里不写死：一旦发现被截断，就把预算翻倍重试，直到上限。
+  const MAX_BUDGET = Number(process.env.AI_MAX_BUDGET_TOKENS || 64000);
+  let budget = maxTokens;
+
   let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), TIMEOUT_MS);
     const startedAt = Date.now();
+    body.max_tokens = budget;
     try {
       const res = await fetch(config.deepseekBaseUrl, {
         method: 'POST',
@@ -67,14 +74,17 @@ export async function chatJson({ system, user, label = 'AI', maxTokens = 4000, t
         '，正文 ' + content.length + ' 字，tokens in/out=' + (usage.prompt_tokens || '?') + '/' + (usage.completion_tokens || '?') +
         '（其中思考 ' + reasoningTokens + '），用时 ' + ((Date.now() - startedAt) / 1000).toFixed(1) + 's'
       );
+      // 预算不够的两种情况：正文为空，或者 JSON 被截断
       if (!content.trim()) {
-        throw new Error('模型没有返回正文（finish_reason=' + choice.finish_reason + '，思考占用 ' + reasoningTokens + ' tokens）。max_tokens 可能被思考过程吃光了。');
+        escalate('正文为空，思考占用了 ' + reasoningTokens + ' tokens');
+        throw new Error('模型没有返回正文（finish_reason=' + choice.finish_reason + '，思考占用 ' + reasoningTokens + ' tokens）');
       }
       let parsed;
       try {
         parsed = extractJson(content);
       } catch (err) {
-        throw new Error(err.message + '（finish_reason=' + choice.finish_reason + '，正文 ' + content.length + ' 字，可能是 max_tokens 不够导致 JSON 被截断）');
+        escalate('正文 ' + content.length + ' 字但 JSON 不完整');
+        throw new Error(err.message + '（finish_reason=' + choice.finish_reason + '）');
       }
       return parsed;
     } catch (err) {
@@ -83,6 +93,17 @@ export async function chatJson({ system, user, label = 'AI', maxTokens = 4000, t
       if (attempt < retries) await sleep(3000 * (attempt + 1));
     } finally {
       clearTimeout(timer);
+    }
+  }
+
+  /** 把预算翻倍（不超过上限），下次重试就用新预算。 */
+  function escalate(reason) {
+    const next = Math.min(budget * 2, MAX_BUDGET);
+    if (next > budget) {
+      console.warn('[ai] ' + label + ' ' + reason + '，把 max_tokens 从 ' + budget + ' 提到 ' + next + ' 后重试');
+      budget = next;
+    } else {
+      console.warn('[ai] ' + label + ' ' + reason + '，但预算已经是上限 ' + MAX_BUDGET + '，无法再加');
     }
   }
   throw new Error(label + ' 调用失败: ' + (lastErr && lastErr.message));

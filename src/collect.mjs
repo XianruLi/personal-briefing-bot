@@ -4,7 +4,7 @@
  */
 import { config } from './config.mjs';
 import { parseFeed } from './feed.mjs';
-import { fetchText, truncate, uniqueBy, dateInZone } from './util.mjs';
+import { fetchText, truncate, uniqueBy, dateInZone, isFresh } from './util.mjs';
 import { collectWeather } from './sources/weather.mjs';
 
 /** 简单哈希，用于给新闻生成稳定 ID。 */
@@ -98,6 +98,8 @@ export async function collectTechNews(state) {
         if (!item.title || !item.link) continue;
         const id = hashId(item.link);
         if (seen.has(id)) continue;
+        const f = isFresh(item, cfg.maxAgeDays || 14);
+        if (!f.fresh) continue;
         bucket.push({
           kind: 'news',
           id,
@@ -116,6 +118,55 @@ export async function collectTechNews(state) {
     }
   }
 
+  return { items: roundRobin(buckets, cfg.maxPerFeed * cfg.feeds.length), errors };
+}
+
+// ============================================================
+//  时政新闻（国内 + 国际）
+//  和「央视新闻」分开：央视偏国内官方口径，这里补国际视角。
+// ============================================================
+export async function collectPolitics(state) {
+  const cfg = config.sources.politics;
+  if (!cfg || !cfg.feeds) return { items: [], errors: [] };
+
+  const seen = new Set(state.seenNewsIds || []);
+  const errors = [];
+  const buckets = [];
+
+  const maxAgeDays = cfg.maxAgeDays || 7;
+  let stale = 0;
+
+  for (const feed of cfg.feeds) {
+    try {
+      const xml = await fetchText(feed.url, { timeoutMs: 25000, label: '时政 ' + feed.id });
+      const bucket = [];
+      for (const item of parseFeed(xml)) {
+        if (!item.title || !item.link) continue;
+        const id = hashId('politics:' + item.link);
+        if (seen.has(id)) continue;
+        // 停更的源会一直返回几年前的内容，必须挡掉
+        const f = isFresh(item, maxAgeDays);
+        if (!f.fresh) { stale++; continue; }
+        bucket.push({
+          kind: 'politics',
+          id,
+          source: feed.name,
+          feedId: feed.id,
+          title: item.title,
+          summary: truncate(item.description, 400),
+          time: item.pubDate || '',
+          url: item.link,
+        });
+        if (bucket.length >= cfg.maxPerFeed) break;
+      }
+      buckets.push(bucket);
+    } catch (err) {
+      errors.push('时政/' + feed.id + ': ' + err.message);
+      buckets.push([]);
+    }
+  }
+
+  if (stale) console.warn('[collect] 时政：丢弃 ' + stale + ' 条超过 ' + maxAgeDays + ' 天的旧闻（源可能已停更）');
   return { items: roundRobin(buckets, cfg.maxPerFeed * cfg.feeds.length), errors };
 }
 
@@ -144,6 +195,8 @@ export async function collectCctv(state) {
       if (!title) continue;
       const id = hashId('cctv:' + (entry.url || title));
       if (seen.has(id)) continue;
+      const focus = String(entry.focus_date || '').trim();
+      if (focus && !isFresh({ pubDate: focus }, cfg.maxAgeDays || 7).fresh) continue;
       items.push({
         kind: 'cnnews',
         id,
@@ -224,22 +277,24 @@ export async function collectAll({ state, mode, timeZone }) {
 
   const emptyWeather = { location: '', timezone: '', current: null, days: [], errors: [] };
 
-  const [arxiv, techNews, cctv, weather] = await Promise.all([
+  const [arxiv, techNews, cctv, politics, weather] = await Promise.all([
     needPapers ? collectArxiv(state).catch((err) => ({ items: [], errors: [err.message] })) : { items: [], errors: [] },
     needNews ? collectTechNews(state).catch((err) => ({ items: [], errors: [err.message] })) : { items: [], errors: [] },
     needNews ? collectCctv(state).catch((err) => ({ items: [], errors: [err.message] })) : { items: [], errors: [] },
+    needNews ? collectPolitics(state).catch((err) => ({ items: [], errors: [err.message] })) : { items: [], errors: [] },
     collectWeather().catch((err) => ({ ...emptyWeather, errors: ['天气：' + err.message] })),
   ]);
 
   let xwlb = { text: '', url: '', date: null, errors: [] };
   if (needNews) xwlb = await collectXwlb(timeZone);
 
-  errors.push(...arxiv.errors, ...techNews.errors, ...cctv.errors, ...xwlb.errors, ...weather.errors);
+  errors.push(...arxiv.errors, ...techNews.errors, ...cctv.errors, ...politics.errors, ...xwlb.errors, ...weather.errors);
 
   return {
     papers: arxiv.items,
     techNews: techNews.items,
     cnNews: cctv.items,
+    politics: politics.items,
     xwlb: xwlb.text,
     xwlbUrl: xwlb.url,
     xwlbDate: xwlb.date,

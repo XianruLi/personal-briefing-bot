@@ -46,6 +46,7 @@ export function buildMorningPrompt({ data, grouped, todayIso, zone }) {
   const maxPapers = config.sources.arxiv.maxPicks;
   const maxTech = config.sources.techNews.maxPicks;
   const maxCn = config.sources.cnNews.maxPicks;
+  const maxPolitics = (config.sources.politics && config.sources.politics.maxPicks) || 4;
 
   const system = [
     '你是用户的「个人咨询管家」，负责每天早上给他一份值日简报。',
@@ -53,6 +54,13 @@ export function buildMorningPrompt({ data, grouped, todayIso, zone }) {
     '挑选原则：优先与他专业方向（移动机器人、ROS2、嵌入式、运动控制、路径规划）相关、且本科能读懂的条目；',
     '明显是纯理论证明、需要博士背景、或者只是营销 buzzword 的，直接跳过不选。',
     '宁可少选，也不要凑数。',
+    '',
+    '时政（politics）的挑选与写法特别注意：',
+    '- 国内和国际都要照顾到，不要只挑一边。',
+    '- 避开纯八卦、纯体育、纯娱乐条目，选真正有信息量的政策、经济、外交、科技动向。',
+    '- 解读要克制：讲清"发生了什么"和"可能的走向"，不下断言、不带情绪。',
+    '- 只根据给定来源写，不要引入来源之外的说法，也不要自行补充"另一种观点"。',
+    '- RT 是英文源，标题和正文要翻成地道中文，不要保留英文。',
     profileBlock(),
   ].join('\n');
 
@@ -71,10 +79,13 @@ export function buildMorningPrompt({ data, grouped, todayIso, zone }) {
     '===== 四、央视新闻候选（只能从这里选，最多 ' + maxCn + ' 条）=====',
     newsBlock(data.cnNews),
     '',
-    '===== 五、昨晚《新闻联播》文字稿节选 =====',
+    '===== 五、时政新闻候选（国内 + 国际，只能从这里选，最多 ' + maxPolitics + ' 条）=====',
+    newsBlock(data.politics || []),
+    '',
+    '===== 六、昨晚《新闻联播》文字稿节选 =====',
     data.xwlb || '（今天没抓到新闻联播文字稿）',
     '',
-    '===== 六、今天的天气（' + (data.weather && data.weather.location ? data.weather.location : '所在地') + ' ' + (data.weather && data.weather.postcode ? data.weather.postcode : '') + '）=====',
+    '===== 七、今天的天气（' + (data.weather && data.weather.location ? data.weather.location : '所在地') + ' ' + (data.weather && data.weather.postcode ? data.weather.postcode : '') + '）=====',
     weatherToPromptText(data.weather, todayIso),
     '',
     '===== 输出要求 =====',
@@ -97,6 +108,7 @@ export function buildMorningPrompt({ data, grouped, todayIso, zone }) {
     '  ],',
     '  "techNews": [ { "id": "候选 id", "titleZh": "中文标题", "summary": "一句话讲清楚发生了什么，以及对他有没有用" } ],',
     '  "cnNews": [ { "id": "候选 id", "topic": "8 字以内的主题词", "summary": "这条新闻说了什么，1 句", "take": "一句快速解读：这意味着什么 / 跟他有什么关系" } ],',
+    '  "politics": [ { "id": "候选 id", "scope": "国内 或 国际", "title": "保留原标题或略微精简，不要改变意思", "summary": "这条说了什么，1-2 句", "take": "一句解读：背后的信号 / 走向 / 为什么值得注意" } ],',
     '  "xwlb": { "headline": "昨晚新闻联播最值得注意的 1 件事，15 字以内", "summary": "2-3 句概括，重点说清政策或经济信号", "take": "一句解读" },',
     '  "tip": "今天给他的一句提醒或鼓励，20-40 字，不要心灵鸡汤腔"',
     '}',

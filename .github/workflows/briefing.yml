@@ -95,6 +95,13 @@ jobs:
           BRIEFING_TIMEZONE: ${{ vars.BRIEFING_TIMEZONE || 'Australia/Melbourne' }}
           USER_NAME: ${{ vars.USER_NAME || '老李' }}
           DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL || 'deepseek-v4-pro' }}
+          # 推送时间的「窗口」：工作流醒来后看本地几点，不在窗口内就跳过。
+          # 想改时间：改这几个 Variable + Cloudflare 的 cron（见 README「改造指南」）
+          MORNING_HOUR: ${{ vars.MORNING_HOUR || '7' }}
+          EVENING_HOUR: ${{ vars.EVENING_HOUR || '21' }}
+          EVENING_MINUTE: ${{ vars.EVENING_MINUTE || '30' }}
+          # 抓新闻时丢弃超过 N 天的旧闻（防止停更的源混进来）
+          NEWS_MAX_AGE_DAYS: ${{ vars.NEWS_MAX_AGE_DAYS || '' }}
         run: node src/index.mjs --mode=${{ steps.run.outputs.mode }} ${{ steps.run.outputs.flags }}
 
       - name: 回写状态

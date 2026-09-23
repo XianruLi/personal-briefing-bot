@@ -80,6 +80,7 @@ export function renderMorning({ ai, data, grouped, zone, todayIso }) {
   const paperMap = byId(data.papers);
   const techMap = byId(data.techNews);
   const cnMap = byId(data.cnNews);
+  const politicsMap = byId(data.politics);
   const sections = [];
 
   const wx = weatherSection(data.weather, todayIso, ai.weather);
@@ -172,6 +173,24 @@ export function renderMorning({ ai, data, grouped, zone, todayIso }) {
   }
   if (cnBlocks.length) {
     sections.push({ title: '🇨🇳 国内要闻速读', body: cnBlocks.join('\n\n'), color: COLORS.cn });
+  }
+
+  // ---- 国际 / 国内时政 ----
+  const politics = (Array.isArray(ai.politics) ? ai.politics : [])
+    .map((n) => ({ meta: politicsMap.get(n.id), ai: n }))
+    .filter((x) => x.meta);
+  if (politics.length) {
+    const body = politics
+      .map((x) => {
+        const scope = x.ai.scope === '国际' ? '🌐' : x.ai.scope === '国内' ? '🇨🇳' : '•';
+        const lines = [scope + ' **' + clip(x.ai.title || x.meta.title, 110) + '**'];
+        if (x.ai.summary) lines.push(clip(x.ai.summary, 320));
+        if (x.ai.take) lines.push('💡 ' + clip(x.ai.take, 250));
+        lines.push('🔗 ' + x.meta.url + '  ·  ' + x.meta.source);
+        return lines.join('\n');
+      })
+      .join('\n\n');
+    sections.push({ title: '🌏 时政要闻与解读', body, color: COLORS.cn });
   }
 
   // ---- 今日一句 ----

@@ -55,6 +55,9 @@ function rawAiMorning(data) {
     cnNews: data.cnNews.slice(0, config.sources.cnNews.maxPicks).map((n) => ({
       id: n.id, titleZh: n.title, topic: '', summary: n.summary.slice(0, 180), take: '',
     })),
+    politics: (data.politics || []).slice(0, (config.sources.politics && config.sources.politics.maxPicks) || 4).map((n) => ({
+      id: n.id, scope: '', title: n.title, summary: n.summary.slice(0, 180), take: '',
+    })),
     xwlb: null,
     weather: null,
     tip: '',
@@ -83,7 +86,7 @@ async function runMorning({ args, state, zone }) {
   console.log('[tasks] 未完成 ' + grouped.openCount + ' 项（逾期 ' + grouped.overdue.length + '，今天到期 ' + grouped.dueToday.length + '），已完成 ' + grouped.completed.length + ' 项');
 
   const data = await collectAll({ state, mode: 'morning', timeZone: config.timeZone });
-  console.log('[collect] 论文候选 ' + data.papers.length + ' 篇，科技新闻 ' + data.techNews.length + ' 条，央视新闻 ' + data.cnNews.length + ' 条，新闻联播 ' + (data.xwlb ? data.xwlb.length + ' 字' : '缺失'));
+  console.log('[collect] 论文候选 ' + data.papers.length + ' 篇，科技新闻 ' + data.techNews.length + ' 条，央视新闻 ' + data.cnNews.length + ' 条，时政 ' + (data.politics ? data.politics.length : 0) + ' 条，新闻联播 ' + (data.xwlb ? data.xwlb.length + ' 字' : '缺失'));
   if (data.errors.length) console.warn('[collect] 部分源失败: ' + data.errors.join(' | '));
 
   let ai;
@@ -92,7 +95,7 @@ async function runMorning({ args, state, zone }) {
   } else {
     try {
       const { system, user } = buildMorningPrompt({ data, grouped, todayIso, zone });
-      ai = await chatJson({ system, user, label: '早报', maxTokens: 12000 });
+      ai = await chatJson({ system, user, label: '早报', maxTokens: 20000 });
     } catch (err) {
       console.error('[ai] 早报生成失败，改用原始内容兜底: ' + err.message);
       ai = rawAiMorning(data);

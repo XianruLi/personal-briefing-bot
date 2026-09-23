@@ -48,7 +48,8 @@
       }
     ],
     "maxPerFeed": 6,
-    "maxPicks": 3
+    "maxPicks": 3,
+    "maxAgeDays": 14
   },
   "cnNews": {
     "cctvApi": "https://news.cctv.com/2019/07/gaiban/cmsdatainterface/page/news_1.jsonp",
@@ -58,7 +59,38 @@
     "cnFallbackSourceName": "中国新闻网",
     "maxCctv": 15,
     "maxXwlbChars": 5000,
-    "maxPicks": 4
+    "maxPicks": 4,
+    "maxAgeDays": 3
+  },
+  "politics": {
+    "_comment": "时政源。只用中国官方媒体（新华社系/央视/中新社等）+ 俄罗斯 RT。不要加 BBC / CNN / 经济学人等西方媒体。",
+    "_warn": "加源前务必确认真实在更新：新华社和人民网的 RSS 早已停更（内容停在 2022-12 和 2025-06），maxAgeDays 会把它们挡掉，加了也白加。",
+    "feeds": [
+      {
+        "id": "cnchina",
+        "name": "中新网·国内",
+        "url": "https://www.chinanews.com.cn/rss/china.xml"
+      },
+      {
+        "id": "cnworld",
+        "name": "中新网·国际",
+        "url": "https://www.chinanews.com.cn/rss/world.xml"
+      },
+      {
+        "id": "cnfinance",
+        "name": "中新网·财经",
+        "url": "https://www.chinanews.com.cn/rss/finance.xml"
+      },
+      {
+        "id": "rt",
+        "name": "RT（今日俄罗斯）",
+        "url": "https://www.rt.com/rss/",
+        "lang": "en"
+      }
+    ],
+    "maxPerFeed": 4,
+    "maxPicks": 4,
+    "maxAgeDays": 3
   },
   "weather": {
     "enabled": true,
