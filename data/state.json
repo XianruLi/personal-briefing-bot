@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastMorningDate": "2026-09-27",
+  "lastMorningDate": "2026-09-28",
   "lastEveningDate": "2026-09-27",
   "seenPaperIds": [
     "2609.13243",
@@ -129,14 +129,21 @@
     "lx19hv",
     "1fu5ba9",
     "z2lytf",
-    "1o3l8tg"
+    "1o3l8tg",
+    "rodq8g",
+    "1xtl912",
+    "xwqh90",
+    "1n91iln",
+    "18101he",
+    "19mdt95",
+    "1qb42mv"
   ],
   "completedAt": {
     "3121 面试准备": "2026-09-21"
   },
   "morningSnapshot": {
-    "date": "2026-09-27",
+    "date": "2026-09-28",
     "openCount": 4
   },
-  "updatedAt": "2026-09-27T11:31:45.854Z"
+  "updatedAt": "2026-09-27T21:02:31.546Z"
 }
