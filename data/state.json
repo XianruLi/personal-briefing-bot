@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastMorningDate": "2026-10-03",
+  "lastMorningDate": "2026-10-04",
   "lastEveningDate": "2026-10-03",
   "seenPaperIds": [
     "2609.13243",
@@ -186,7 +186,13 @@
     "17ba453",
     "5dg9a2",
     "1ihd67n",
-    "tjg3qd"
+    "tjg3qd",
+    "8h4c31",
+    "1q3tm2v",
+    "gibin9",
+    "101ells",
+    "bzoaid",
+    "1eleevk"
   ],
   "completedAt": {
     "3121 面试准备": "2026-09-21",
@@ -195,8 +201,8 @@
     "周末的时候准备有关电磁场的作业的面试，着重注意电场知识点的梳理。": "2026-09-29"
   },
   "morningSnapshot": {
-    "date": "2026-10-03",
+    "date": "2026-10-04",
     "openCount": 1
   },
-  "updatedAt": "2026-10-03T11:31:31.191Z"
+  "updatedAt": "2026-10-03T20:02:02.605Z"
 }
