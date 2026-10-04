@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastMorningDate": "2026-10-04",
+  "lastMorningDate": "2026-10-05",
   "lastEveningDate": "2026-10-04",
   "seenPaperIds": [
     "2609.13243",
@@ -192,17 +192,22 @@
     "gibin9",
     "101ells",
     "bzoaid",
-    "1eleevk"
+    "1eleevk",
+    "6o9l50",
+    "ud7y38",
+    "1imnfhk",
+    "1xerix3",
+    "1s3vgr1",
+    "iemi9r"
   ],
   "completedAt": {
-    "3121 面试准备": "2026-09-21",
     "2026年9月23日早上先修改4100那门课的作业，并让ai读取并总结经验。之后让ai阅读教授给定的标准答案中的pytorch用法，例如torchmetrics。 第三步，再完成assignment": "2026-09-29",
     "继续进行毕业设计中有关文献的阅读和整理，着重了解fractal marker及其使用场景。": "2026-09-29",
     "周末的时候准备有关电磁场的作业的面试，着重注意电场知识点的梳理。": "2026-09-29"
   },
   "morningSnapshot": {
-    "date": "2026-10-04",
+    "date": "2026-10-05",
     "openCount": 1
   },
-  "updatedAt": "2026-10-04T10:31:08.051Z"
+  "updatedAt": "2026-10-04T20:01:54.874Z"
 }
