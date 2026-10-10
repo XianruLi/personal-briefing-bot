@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastMorningDate": "2026-10-10",
+  "lastMorningDate": "2026-10-11",
   "lastEveningDate": "2026-10-10",
   "seenPaperIds": [
     "2609.13243",
@@ -246,7 +246,12 @@
     "1i9acv1",
     "it8cle",
     "hpv5p",
-    "b8jutr"
+    "b8jutr",
+    "1imxho2",
+    "yo2wc0",
+    "16oiztt",
+    "bxqkwx",
+    "1p20cqa"
   ],
   "completedAt": {
     "2026年9月23日早上先修改4100那门课的作业，并让ai读取并总结经验。之后让ai阅读教授给定的标准答案中的pytorch用法，例如torchmetrics。 第三步，再完成assignment": "2026-09-29",
@@ -254,8 +259,8 @@
     "周末的时候准备有关电磁场的作业的面试，着重注意电场知识点的梳理。": "2026-09-29"
   },
   "morningSnapshot": {
-    "date": "2026-10-10",
+    "date": "2026-10-11",
     "openCount": 1
   },
-  "updatedAt": "2026-10-10T10:31:28.724Z"
+  "updatedAt": "2026-10-10T20:01:41.674Z"
 }
