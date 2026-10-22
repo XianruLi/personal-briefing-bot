@@ -1,7 +1,7 @@
 {
   "version": 1,
   "lastMorningDate": "2026-10-22",
-  "lastEveningDate": "2026-10-21",
+  "lastEveningDate": "2026-10-22",
   "seenPaperIds": [
     "2609.13243",
     "2609.13270",
@@ -353,5 +353,5 @@
     "date": "2026-10-22",
     "openCount": 1
   },
-  "updatedAt": "2026-10-21T20:03:15.411Z"
+  "updatedAt": "2026-10-22T10:30:55.072Z"
 }
