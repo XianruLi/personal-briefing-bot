@@ -64,16 +64,17 @@ class _MonthBase(ctk.CTkFrame):
         head.grid(row=0, column=0, sticky="ew", pady=(0, 2))
         head.grid_columnconfigure(2, weight=1)
 
-        ctk.CTkButton(head, text="◀", width=26, height=22, font=_font(11),
-                      fg_color="transparent", hover_color=("gray85", "gray28"),
-                      command=lambda: self._shift(-1)).grid(row=0, column=0)
+        arrow = dict(width=26, height=22, font=_font(11), fg_color="transparent",
+                     text_color=("#1f2328", "#e6edf3"),
+                     hover_color=("#e9ecef", "#2d333b"))
+
+        ctk.CTkButton(head, text="◀", command=lambda: self._shift(-1), **arrow).grid(row=0, column=0)
 
         self.month_lbl = ctk.CTkLabel(head, text="", font=_font(13, "bold"))
         self.month_lbl.grid(row=0, column=1, padx=8)
 
-        ctk.CTkButton(head, text="▶", width=26, height=22, font=_font(11),
-                      fg_color="transparent", hover_color=("gray85", "gray28"),
-                      command=lambda: self._shift(1)).grid(row=0, column=2, sticky="w")
+        ctk.CTkButton(head, text="▶", command=lambda: self._shift(1), **arrow).grid(
+            row=0, column=2, sticky="w")
 
         self.total_lbl = ctk.CTkLabel(head, text="", font=_font(11),
                                       text_color=(_muted(), _muted()))

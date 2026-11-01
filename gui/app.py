@@ -312,15 +312,18 @@ class App(ctk.CTk):
                                      font=_font(12, "bold"), command=self.open_add_dialog)
         self.btn_add.pack(side="left", padx=4)
 
+        outline = dict(fg_color="transparent", border_width=1,
+                       border_color=_fg("#d0d7de", "#3d444d"),
+                       text_color=_fg("#1f2328", "#e6edf3"),
+                       hover_color=_fg("#f3f4f6", "#2d333b"))
+
         self.btn_layout = ctk.CTkButton(
-            btns, width=104, height=30, font=_font(12),
-            fg_color="transparent", border_width=1, command=self.toggle_layout,
-            text="⇅ 上下分栏" if self._layout == "horizontal" else "⇄ 左右分栏")
+            btns, width=104, height=30, font=_font(12), command=self.toggle_layout,
+            text="⇅ 上下分栏" if self._layout == "horizontal" else "⇄ 左右分栏", **outline)
         self.btn_layout.pack(side="left", padx=4)
 
         self.btn_theme = ctk.CTkButton(btns, text="◐ 主题", width=78, height=30,
-                                       font=_font(12), fg_color="transparent", border_width=1,
-                                       command=self.toggle_theme)
+                                       font=_font(12), command=self.toggle_theme, **outline)
         self.btn_theme.pack(side="left", padx=4)
 
         self.btn_sync = ctk.CTkButton(btns, text="⟳ 同步", width=82, height=30,
@@ -380,6 +383,9 @@ class App(ctk.CTk):
 
         self.view_switch = ctk.CTkSegmentedButton(
             head, values=["热力图", "日历"], font=_font(11), height=24,
+            text_color=_fg("#1f2328", "#e6edf3"),
+            unselected_color=_fg("#eef1f4", "#2d333b"),
+            unselected_hover_color=_fg("#e3e7ec", "#353b45"),
             command=self._switch_view)
         self.view_switch.set("热力图" if self._cal_view == "heatmap" else "日历")
         self.view_switch.grid(row=0, column=2, sticky="e")
