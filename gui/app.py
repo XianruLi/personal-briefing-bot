@@ -142,8 +142,11 @@ class TaskPane(ctk.CTkFrame):
                 c.set_wrap(max(160, width - 78))
 
     def set_tasks(self, tasks: list[store.Task]) -> None:
-        for c in self._cards:
-            c.destroy()
+        # 直接清空容器里的所有子控件。
+        # 不能只销毁 self._cards 里记录的：空状态提示标签没有进那个列表，
+        # 只销毁卡片会让「还没有完成的任务」这类占位每次刷新都残留一份，越积越多。
+        for w in self.scroll.winfo_children():
+            w.destroy()
         self._cards.clear()
 
         self.head_lbl.configure(text=self._title)
