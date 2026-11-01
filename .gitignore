@@ -6,3 +6,11 @@ legacy/
 *.log
 Thumbs.db
 .DS_Store
+
+# 桌面 GUI 的打包产物（exe 有 25MB，不入库）
+gui/build/
+gui/dist/
+任务面板.exe
+gui_config.json
+__pycache__/
+*.pyc
