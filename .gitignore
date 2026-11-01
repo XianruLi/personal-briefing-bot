@@ -12,5 +12,6 @@ gui/build/
 gui/dist/
 任务面板.exe
 gui_config.json
+data/gui_prefs.json
 __pycache__/
 *.pyc

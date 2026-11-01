@@ -365,6 +365,7 @@ class App(ctk.CTk):
 
     def toggle_layout(self) -> None:
         self._layout = "vertical" if self._layout == "horizontal" else "horizontal"
+        store.save_pref("layout", self._layout)
         self.btn_layout.configure(text="⇅ 上下分栏" if self._layout == "horizontal" else "⇄ 左右分栏")
         self._apply_layout()
         self.after(60, lambda: self.reload())
@@ -406,6 +407,7 @@ class App(ctk.CTk):
 
     def _switch_view(self, value: str) -> None:
         self._cal_view = "heatmap" if value == "热力图" else "calendar"
+        store.save_pref("view", self._cal_view)
         self._mount_view()
 
     def _update_calendar(self, by_day: dict) -> None:
@@ -496,7 +498,9 @@ class App(ctk.CTk):
         self.reload()
 
     def toggle_theme(self) -> None:
-        ctk.set_appearance_mode("light" if _dark() else "dark")
+        new_mode = "light" if _dark() else "dark"
+        ctk.set_appearance_mode(new_mode)
+        store.save_pref("theme", new_mode)
         self._rebuild_theme()
 
     def _rebuild_theme(self) -> None:
@@ -611,10 +615,11 @@ def main() -> None:
     except Exception:
         pass
 
-    layout = "horizontal"
-    theme = "dark"
+    prefs = store.load_prefs()
+    layout = prefs.get("layout", "horizontal")
+    theme = prefs.get("theme", "dark")
     screenshot = ""
-    view = "heatmap"
+    view = prefs.get("view", "heatmap")
     for arg in sys.argv[1:]:
         if arg.startswith("--layout="):
             layout = arg.split("=", 1)[1]

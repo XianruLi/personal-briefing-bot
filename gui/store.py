@@ -61,6 +61,7 @@ TASKS_FILE = ROOT / "tasks" / "tasks.md"
 DONE_FILE = ROOT / "tasks" / "done.md"
 STATE_FILE = ROOT / "data" / "state.json"
 LOCAL_LOG = ROOT / "data" / "gui_completions.json"
+PREFS_FILE = ROOT / "data" / "gui_prefs.json"
 
 # ---------------------------------------------------------------- 解析
 
@@ -249,6 +250,25 @@ def _read_json(path: Path, default):
 def _write_json(path: Path, data) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+# ---------------------------------------------------------------- 界面偏好
+
+def load_prefs() -> dict:
+    """读取界面偏好（主题等）。读不到就返回空字典。"""
+    try:
+        return json.loads(PREFS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def save_pref(key: str, value) -> None:
+    prefs = load_prefs()
+    prefs[key] = value
+    try:
+        _write_json(PREFS_FILE, prefs)
+    except Exception:
+        pass
 
 
 def load_local_log() -> dict[str, str]:
