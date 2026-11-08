@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastMorningDate": "2026-11-08",
+  "lastMorningDate": "2026-11-09",
   "lastEveningDate": "2026-11-08",
   "seenPaperIds": [
     "2609.13243",
@@ -493,12 +493,19 @@
     "zqwb1d",
     "1nwlaod",
     "1pg567u",
-    "1w88jrm"
+    "1w88jrm",
+    "1hub6nr",
+    "xe6tzo",
+    "1jsq5qa",
+    "1wn6kvj",
+    "qemspy",
+    "gy6b9w",
+    "cbq1r1"
   ],
   "completedAt": {},
   "morningSnapshot": {
-    "date": "2026-11-08",
+    "date": "2026-11-09",
     "openCount": 1
   },
-  "updatedAt": "2026-11-08T10:30:49.062Z"
+  "updatedAt": "2026-11-08T20:01:46.059Z"
 }
