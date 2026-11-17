@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastMorningDate": "2026-11-17",
+  "lastMorningDate": "2026-11-18",
   "lastEveningDate": "2026-11-17",
   "seenPaperIds": [
     "2609.13243",
@@ -136,7 +136,10 @@
     "2611.14685",
     "2611.17730",
     "2611.17529",
-    "2611.17598"
+    "2611.17598",
+    "2611.18855",
+    "2611.18877",
+    "2611.18935"
   ],
   "seenNewsIds": [
     "nngr64",
@@ -569,12 +572,19 @@
     "n5ak5f",
     "1uuni7a",
     "109x8om",
-    "1gq19s7"
+    "1gq19s7",
+    "1iz540l",
+    "1yulxu1",
+    "xoy3wd",
+    "ux9sac",
+    "u7erx0",
+    "m6ajfm",
+    "sirboa"
   ],
   "completedAt": {},
   "morningSnapshot": {
-    "date": "2026-11-17",
+    "date": "2026-11-18",
     "openCount": 1
   },
-  "updatedAt": "2026-11-17T10:30:41.479Z"
+  "updatedAt": "2026-11-17T20:02:01.472Z"
 }
